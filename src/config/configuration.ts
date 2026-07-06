@@ -1,0 +1,15 @@
+export default () => ({
+  nodeEnv: process.env.NODE_ENV ?? 'development',
+  port: parseInt(process.env.PORT ?? '3000', 10),
+  apiPrefix: process.env.API_PREFIX ?? 'api',
+  swaggerPath: process.env.SWAGGER_PATH ?? 'api/docs',
+  database: {
+    host: process.env.DATABASE_HOST,
+    port: parseInt(process.env.DATABASE_PORT ?? '5432', 10),
+    username: process.env.DATABASE_USER,
+    password: process.env.DATABASE_PASSWORD,
+    name: process.env.DATABASE_NAME,
+    ssl: process.env.DATABASE_SSL === 'true',
+    synchronize: process.env.DATABASE_SYNCHRONIZE === 'true',
+  },
+});
