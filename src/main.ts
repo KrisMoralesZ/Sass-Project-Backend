@@ -40,6 +40,13 @@ async function bootstrap() {
     .setDescription('Multi-tenant project management API (Jira/Trello-style)')
     .setVersion('1.0')
     .addBearerAuth()
+    .addGlobalParameters({
+      in: 'header',
+      name: 'x-organization-id',
+      required: false,
+      description: 'Active organization context for the request',
+      schema: { type: 'string' },
+    })
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
