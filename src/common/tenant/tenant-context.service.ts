@@ -1,4 +1,9 @@
-import { Inject, Injectable, Scope } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Scope,
+} from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import type { Request } from 'express';
 import { TenantContext } from './interfaces/tenant-context.interface';
@@ -31,7 +36,9 @@ export class TenantContextService {
   requireOrganizationId(): string {
     const organizationId = this.getOrganizationId();
     if (!organizationId) {
-      throw new Error('Organization context is not set for this request.');
+      throw new BadRequestException(
+        'Organization context is not set for this request.',
+      );
     }
 
     return organizationId;
