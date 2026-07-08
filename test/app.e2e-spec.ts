@@ -8,9 +8,17 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import {
+  ApiSuccessResponse,
   HttpExceptionFilter,
   TransformResponseInterceptor,
 } from './../src/common';
+
+interface HealthData {
+  status: string;
+  database: string;
+  organizationId: string | null;
+  uptime: number;
+}
 
 jest.setTimeout(30000);
 
@@ -48,9 +56,10 @@ describe('Health (e2e)', () => {
       .get('/api/v1/health')
       .expect(200)
       .expect((response) => {
-        expect(response.body.success).toBe(true);
-        expect(response.body.data.status).toBeDefined();
-        expect(response.body.meta.version).toBe('v1');
+        const body = response.body as ApiSuccessResponse<HealthData>;
+        expect(body.success).toBe(true);
+        expect(body.data.status).toBeDefined();
+        expect(body.meta.version).toBe('v1');
       });
   });
 
