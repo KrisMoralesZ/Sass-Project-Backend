@@ -22,9 +22,7 @@ export class TenantContextResolver {
       return fromHeader;
     }
 
-    return this.resolveFromAuthorizationHeader(
-      request.headers.authorization,
-    );
+    return this.resolveFromAuthorizationHeader(request.headers.authorization);
   }
 
   private resolveFromAuthenticatedUser(

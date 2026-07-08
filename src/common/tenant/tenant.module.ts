@@ -1,9 +1,4 @@
-import {
-  Global,
-  MiddlewareConsumer,
-  Module,
-  NestModule,
-} from '@nestjs/common';
+import { Global, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { TenantGuard } from './guards/tenant.guard';
 import { TenantContextMiddleware } from './middleware/tenant-context.middleware';

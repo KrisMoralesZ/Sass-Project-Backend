@@ -1,7 +1,4 @@
-import {
-  ForbiddenException,
-  Injectable,
-} from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { AuthenticatedUser } from './interfaces/tenant-context.interface';
 
 @Injectable()

@@ -27,7 +27,9 @@ export class TenantGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<RequestWithTenantContext>();
+    const request = context
+      .switchToHttp()
+      .getRequest<RequestWithTenantContext>();
     const organizationId = request.tenantContext?.organizationId;
 
     if (!organizationId) {
