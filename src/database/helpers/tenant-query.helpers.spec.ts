@@ -56,8 +56,11 @@ describe('applyTenantScope', () => {
 
     applyTenantScope(queryBuilder, 'org-123', 'p');
 
-    expect(andWhere).toHaveBeenCalledWith('p.organizationId = :organizationId', {
-      organizationId: 'org-123',
-    });
+    expect(andWhere).toHaveBeenCalledWith(
+      'p.organizationId = :organizationId',
+      {
+        organizationId: 'org-123',
+      },
+    );
   });
 });

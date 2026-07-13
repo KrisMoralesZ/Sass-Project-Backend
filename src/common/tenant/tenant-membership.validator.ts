@@ -19,11 +19,10 @@ export class TenantMembershipValidator {
     }
   }
 
-  protected async isMember(
-    _userId: string,
-    _organizationId: string,
-  ): Promise<boolean> {
+  protected isMember(userId: string, organizationId: string): Promise<boolean> {
+    void userId;
+    void organizationId;
     // Organizations module will replace this with a real membership lookup.
-    return true;
+    return Promise.resolve(true);
   }
 }

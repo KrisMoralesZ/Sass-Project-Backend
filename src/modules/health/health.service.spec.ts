@@ -1,3 +1,4 @@
+import { DataSource } from 'typeorm';
 import { HealthService } from './health.service';
 
 describe('HealthService', () => {
@@ -6,7 +7,7 @@ describe('HealthService', () => {
       query: jest.fn().mockRejectedValue(new Error('db down')),
     };
 
-    const service = new HealthService(dataSource as any);
+    const service = new HealthService(dataSource as unknown as DataSource);
     const result = await service.check();
 
     expect(result).toEqual(

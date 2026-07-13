@@ -8,9 +8,15 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import {
+  ApiErrorResponse,
+  ApiSuccessResponse,
   HttpExceptionFilter,
   TransformResponseInterceptor,
 } from './../src/common';
+
+interface TenantContextData {
+  organizationId: string | null;
+}
 
 jest.setTimeout(30000);
 
@@ -48,8 +54,9 @@ describe('Tenant guard (e2e)', () => {
       .get('/api/v1/health')
       .expect(200)
       .expect((response) => {
-        expect(response.body.success).toBe(true);
-        expect(response.body.data.organizationId).toBeNull();
+        const body = response.body as ApiSuccessResponse<TenantContextData>;
+        expect(body.success).toBe(true);
+        expect(body.data.organizationId).toBeNull();
       });
   });
 
@@ -58,8 +65,9 @@ describe('Tenant guard (e2e)', () => {
       .get('/api/v1/tenant/context')
       .expect(400)
       .expect((response) => {
-        expect(response.body.success).toBe(false);
-        expect(response.body.error.statusCode).toBe(400);
+        const body = response.body as ApiErrorResponse;
+        expect(body.success).toBe(false);
+        expect(body.error.statusCode).toBe(400);
       });
   });
 
@@ -69,8 +77,9 @@ describe('Tenant guard (e2e)', () => {
       .set('x-organization-id', 'org-123')
       .expect(200)
       .expect((response) => {
-        expect(response.body.success).toBe(true);
-        expect(response.body.data.organizationId).toBe('org-123');
+        const body = response.body as ApiSuccessResponse<TenantContextData>;
+        expect(body.success).toBe(true);
+        expect(body.data.organizationId).toBe('org-123');
       });
   });
 

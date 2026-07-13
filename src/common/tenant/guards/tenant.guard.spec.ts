@@ -10,9 +10,12 @@ describe('TenantGuard', () => {
   let tenantMembershipValidator: jest.Mocked<TenantMembershipValidator>;
   let reflector: jest.Mocked<Reflector>;
 
+  let assertMembership: jest.Mock;
+
   beforeEach(() => {
+    assertMembership = jest.fn();
     tenantMembershipValidator = {
-      assertMembership: jest.fn(),
+      assertMembership,
     } as unknown as jest.Mocked<TenantMembershipValidator>;
 
     reflector = {
@@ -30,7 +33,7 @@ describe('TenantGuard', () => {
     const request = { headers: {} } as RequestWithTenantContext;
 
     await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
-    expect(tenantMembershipValidator.assertMembership).not.toHaveBeenCalled();
+    expect(assertMembership).not.toHaveBeenCalled();
   });
 
   it('rejects requests without organization context', async () => {
@@ -51,9 +54,6 @@ describe('TenantGuard', () => {
     } as RequestWithTenantContext;
 
     await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
-    expect(tenantMembershipValidator.assertMembership).toHaveBeenCalledWith(
-      request.user,
-      'org-123',
-    );
+    expect(assertMembership).toHaveBeenCalledWith(request.user, 'org-123');
   });
 });

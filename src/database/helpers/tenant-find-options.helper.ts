@@ -13,11 +13,11 @@ export function withOrganizationScope<T extends TenantScopedEntity>(
     return where.map((condition) => ({
       ...condition,
       organizationId,
-    })) as FindOptionsWhere<T>[];
+    }));
   }
 
   return {
     ...where,
     organizationId,
-  } as FindOptionsWhere<T>;
+  };
 }

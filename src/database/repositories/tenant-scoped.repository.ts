@@ -18,9 +18,7 @@ import { withOrganizationScope } from '../helpers/tenant-find-options.helper';
  *
  * @see ../../../docs/tenant-isolation.md
  */
-export abstract class TenantScopedRepository<
-  T extends TenantScopedEntity,
-> {
+export abstract class TenantScopedRepository<T extends TenantScopedEntity> {
   protected abstract readonly repository: Repository<T>;
 
   constructor(protected readonly tenantContext: TenantContextService) {}
@@ -58,9 +56,11 @@ export abstract class TenantScopedRepository<
     );
   }
 
-  find(options?: Omit<FindManyOptions<T>, 'where'> & {
-    where?: FindOptionsWhere<T> | FindOptionsWhere<T>[];
-  }): Promise<T[]> {
+  find(
+    options?: Omit<FindManyOptions<T>, 'where'> & {
+      where?: FindOptionsWhere<T> | FindOptionsWhere<T>[];
+    },
+  ): Promise<T[]> {
     return this.repository.find({
       ...options,
       where: this.scopedWhere(options?.where),
