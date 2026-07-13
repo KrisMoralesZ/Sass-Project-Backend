@@ -1,5 +1,5 @@
-import { BadRequestException } from '@nestjs/common';
 import { FindManyOptions } from 'typeorm';
+import { AppException, ErrorCode } from '../errors';
 import {
   DEFAULT_LIMIT,
   DEFAULT_PAGE,
@@ -42,7 +42,8 @@ export function resolveSort<T extends string>(
   defaults: SortDefaults<T>,
 ): Record<string, SortOrder> {
   if (query.sortBy && !allowedFields.includes(query.sortBy as T)) {
-    throw new BadRequestException(
+    throw AppException.badRequest(
+      ErrorCode.INVALID_SORT_FIELD,
       `Invalid sort field "${query.sortBy}". Allowed values: ${allowedFields.join(', ')}.`,
     );
   }

@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { ErrorCode } from '../../errors';
 import { Reflector } from '@nestjs/core';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { TenantGuard } from './tenant.guard';
@@ -40,9 +40,11 @@ describe('TenantGuard', () => {
     reflector.getAllAndOverride.mockReturnValue(false);
     const request = { headers: {} } as RequestWithTenantContext;
 
-    await expect(guard.canActivate(createContext(request))).rejects.toThrow(
-      BadRequestException,
-    );
+    await expect(
+      guard.canActivate(createContext(request)),
+    ).rejects.toMatchObject({
+      code: ErrorCode.TENANT_ORGANIZATION_REQUIRED,
+    });
   });
 
   it('validates membership when organization context is present', async () => {

@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { AppException, ErrorCode } from '../errors';
 import { TenantContextService } from './tenant-context.service';
 import { RequestWithTenantContext } from './types/request-with-tenant-context.type';
 
@@ -17,6 +17,16 @@ describe('TenantContextService', () => {
     const request = {} as RequestWithTenantContext;
     const service = new TenantContextService(request);
 
-    expect(() => service.requireOrganizationId()).toThrow(BadRequestException);
+    let thrown: unknown;
+    try {
+      service.requireOrganizationId();
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toBeInstanceOf(AppException);
+    expect((thrown as AppException).code).toBe(
+      ErrorCode.TENANT_ORGANIZATION_REQUIRED,
+    );
   });
 });

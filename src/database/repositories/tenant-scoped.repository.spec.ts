@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { ForbiddenException } from '@nestjs/common';
+import { ErrorCode } from '../../common/errors';
 import { Repository } from 'typeorm';
 import { TenantContextService } from '../../common/tenant/tenant-context.service';
 import { RequestWithTenantContext } from '../../common/tenant/types/request-with-tenant-context.type';
@@ -104,8 +104,8 @@ describe('TenantScopedRepository', () => {
       name: 'Other org project',
     } as TestProject;
 
-    await expect(scopedRepository.save(project)).rejects.toThrow(
-      ForbiddenException,
-    );
+    await expect(scopedRepository.save(project)).rejects.toMatchObject({
+      code: ErrorCode.TENANT_ORGANIZATION_FORBIDDEN,
+    });
   });
 });

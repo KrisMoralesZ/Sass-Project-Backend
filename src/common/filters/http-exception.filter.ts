@@ -6,6 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { parseExceptionResponse } from '../errors/parse-exception-response.util';
 import { ApiErrorResponse } from '../interfaces/api-response.interface';
 
 @Catch()
@@ -23,27 +24,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const exceptionResponse =
       exception instanceof HttpException ? exception.getResponse() : null;
 
-    let message: string | string[] = 'Internal server error';
-    let error: string | undefined = HttpStatus[status];
-
-    if (typeof exceptionResponse === 'string') {
-      message = exceptionResponse;
-    } else if (
-      exceptionResponse &&
-      typeof exceptionResponse === 'object' &&
-      'message' in exceptionResponse
-    ) {
-      const responseBody = exceptionResponse as {
-        message?: string | string[];
-        error?: string;
-      };
-      message = responseBody.message ?? message;
-      error = responseBody.error ?? error;
-    }
+    const { code, message, error } = parseExceptionResponse(
+      status,
+      exceptionResponse,
+    );
 
     const body: ApiErrorResponse = {
       success: false,
       error: {
+        code,
         statusCode: status,
         message,
         error,

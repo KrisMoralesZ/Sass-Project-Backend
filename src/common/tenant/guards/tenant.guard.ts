@@ -1,10 +1,6 @@
-import {
-  BadRequestException,
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { AppException, ErrorCode } from '../../errors';
 import { OPTIONAL_ORGANIZATION_KEY } from '../constants/tenant-metadata.constants';
 import { ORGANIZATION_ID_HEADER } from '../constants/tenant.constants';
 import { TenantMembershipValidator } from '../tenant-membership.validator';
@@ -33,7 +29,8 @@ export class TenantGuard implements CanActivate {
     const organizationId = request.tenantContext?.organizationId;
 
     if (!organizationId) {
-      throw new BadRequestException(
+      throw AppException.badRequest(
+        ErrorCode.TENANT_ORGANIZATION_REQUIRED,
         `Organization context is required. Provide the ${ORGANIZATION_ID_HEADER} header or a JWT with an organizationId claim.`,
       );
     }

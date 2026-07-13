@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { AppException, ErrorCode } from '../errors';
 import { SortOrder } from '../enums/sort-order.enum';
 import {
   buildFindManyOptions,
@@ -48,12 +48,19 @@ describe('resolveSort', () => {
   });
 
   it('rejects unsupported sort fields', () => {
-    expect(() =>
+    let thrown: unknown;
+
+    try {
       resolveSort({ sortBy: 'password' }, allowedFields, {
         sortBy: 'createdAt',
         sortOrder: SortOrder.DESC,
-      }),
-    ).toThrow(BadRequestException);
+      });
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toBeInstanceOf(AppException);
+    expect((thrown as AppException).code).toBe(ErrorCode.INVALID_SORT_FIELD);
   });
 });
 

@@ -1,5 +1,6 @@
-export * from './enums/sort-order.enum';
 export * from './dto';
+export * from './enums/sort-order.enum';
+export * from './errors';
 export * from './filters/http-exception.filter';
 export * from './interceptors/transform-response.interceptor';
 export * from './interfaces/api-response.interface';

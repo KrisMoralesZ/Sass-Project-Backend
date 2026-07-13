@@ -10,6 +10,7 @@ import { AppModule } from './../src/app.module';
 import {
   ApiErrorResponse,
   ApiSuccessResponse,
+  ErrorCode,
   HttpExceptionFilter,
   TransformResponseInterceptor,
 } from './../src/common';
@@ -68,6 +69,7 @@ describe('Tenant guard (e2e)', () => {
         const body = response.body as ApiErrorResponse;
         expect(body.success).toBe(false);
         expect(body.error.statusCode).toBe(400);
+        expect(body.error.code).toBe(ErrorCode.TENANT_ORGANIZATION_REQUIRED);
       });
   });
 
