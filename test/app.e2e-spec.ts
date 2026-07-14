@@ -10,6 +10,7 @@ import { AppModule } from './../src/app.module';
 import {
   ApiSuccessResponse,
   HttpExceptionFilter,
+  REQUEST_ID_HEADER,
   TransformResponseInterceptor,
 } from './../src/common';
 
@@ -60,6 +61,17 @@ describe('Health (e2e)', () => {
         expect(body.success).toBe(true);
         expect(body.data.status).toBeDefined();
         expect(body.meta.version).toBe('v1');
+        expect(response.headers[REQUEST_ID_HEADER]).toBeDefined();
+      });
+  });
+
+  it('/api/v1/health (GET) echoes provided request id', () => {
+    return request(app.getHttpServer())
+      .get('/api/v1/health')
+      .set(REQUEST_ID_HEADER, 'client-request-id')
+      .expect(200)
+      .expect((response) => {
+        expect(response.headers[REQUEST_ID_HEADER]).toBe('client-request-id');
       });
   });
 

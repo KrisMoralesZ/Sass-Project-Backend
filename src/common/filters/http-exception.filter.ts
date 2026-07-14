@@ -4,13 +4,17 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { parseExceptionResponse } from '../errors/parse-exception-response.util';
 import { ApiErrorResponse } from '../interfaces/api-response.interface';
+import { getRequestLogContext } from '../logging/utils/request-log-context.util';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(HttpExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -27,6 +31,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const { code, message, error } = parseExceptionResponse(
       status,
       exceptionResponse,
+    );
+
+    this.logger.error(
+      JSON.stringify({
+        ...getRequestLogContext(request),
+        statusCode: status,
+        code,
+        message,
+        error,
+      }),
     );
 
     const body: ApiErrorResponse = {
