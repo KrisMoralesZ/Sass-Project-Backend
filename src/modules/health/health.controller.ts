@@ -1,10 +1,11 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import type { Response } from 'express';
+import { OptionalOrganization } from '../../common/tenant';
 import {
-  CurrentOrganization,
-  OptionalOrganization,
-  ORGANIZATION_ID_HEADER,
-} from '../../common/tenant';
+  HealthCheckResponseDto,
+  LivenessResponseDto,
+} from './dto/health-check-response.dto';
 import { HealthService } from './health.service';
 
 @ApiTags('health')
@@ -14,13 +15,44 @@ export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Application health check' })
-  @ApiHeader({
-    name: ORGANIZATION_ID_HEADER,
-    required: false,
-    description: 'Active organization context for the request',
+  @ApiOperation({ summary: 'Detailed application health status' })
+  @ApiResponse({ status: HttpStatus.OK, type: HealthCheckResponseDto })
+  @ApiResponse({
+    status: HttpStatus.SERVICE_UNAVAILABLE,
+    type: HealthCheckResponseDto,
   })
-  check(@CurrentOrganization() organizationId?: string) {
-    return this.healthService.check(organizationId);
+  async check(@Res({ passthrough: true }) response: Response) {
+    const result = await this.healthService.getHealth();
+    this.applyHealthStatus(response, result.status);
+    return result;
+  }
+
+  @Get('live')
+  @ApiOperation({ summary: 'Liveness probe' })
+  @ApiResponse({ status: HttpStatus.OK, type: LivenessResponseDto })
+  liveness() {
+    return this.healthService.getLiveness();
+  }
+
+  @Get('ready')
+  @ApiOperation({ summary: 'Readiness probe' })
+  @ApiResponse({ status: HttpStatus.OK, type: HealthCheckResponseDto })
+  @ApiResponse({
+    status: HttpStatus.SERVICE_UNAVAILABLE,
+    type: HealthCheckResponseDto,
+  })
+  async readiness(@Res({ passthrough: true }) response: Response) {
+    const result = await this.healthService.getReadiness();
+    this.applyHealthStatus(response, result.status);
+    return result;
+  }
+
+  private applyHealthStatus(
+    response: Response,
+    status: HealthCheckResponseDto['status'],
+  ): void {
+    if (status !== 'ok') {
+      response.status(HttpStatus.SERVICE_UNAVAILABLE);
+    }
   }
 }
