@@ -5,7 +5,7 @@ import { DataSource } from 'typeorm';
 export class HealthService {
   constructor(private readonly dataSource: DataSource) {}
 
-  async check() {
+  async check(organizationId?: string) {
     let database: 'up' | 'down' = 'down';
 
     try {
@@ -18,6 +18,7 @@ export class HealthService {
     return {
       status: database === 'up' ? 'ok' : 'degraded',
       database,
+      organizationId: organizationId ?? null,
       uptime: process.uptime(),
     };
   }
