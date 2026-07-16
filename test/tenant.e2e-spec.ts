@@ -16,7 +16,16 @@ import {
 } from './../src/common';
 
 interface TenantContextData {
-  organizationId: string | null;
+  organizationId: string;
+}
+
+interface HealthCheckData {
+  status: 'ok' | 'degraded';
+  checks: {
+    database: {
+      status: 'up' | 'down';
+    };
+  };
 }
 
 jest.setTimeout(30000);
@@ -55,9 +64,10 @@ describe('Tenant guard (e2e)', () => {
       .get('/api/v1/health')
       .expect(200)
       .expect((response) => {
-        const body = response.body as ApiSuccessResponse<TenantContextData>;
+        const body = response.body as ApiSuccessResponse<HealthCheckData>;
         expect(body.success).toBe(true);
-        expect(body.data.organizationId).toBeNull();
+        expect(body.data.status).toBe('ok');
+        expect(body.data.checks.database.status).toBe('up');
       });
   });
 
