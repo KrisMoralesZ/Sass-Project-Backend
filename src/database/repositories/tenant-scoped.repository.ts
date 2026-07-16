@@ -1,4 +1,3 @@
-import { ForbiddenException } from '@nestjs/common';
 import {
   DeepPartial,
   FindManyOptions,
@@ -7,6 +6,7 @@ import {
   Repository,
   SelectQueryBuilder,
 } from 'typeorm';
+import { AppException, ErrorCode } from '../../common/errors';
 import { TenantContextService } from '../../common/tenant/tenant-context.service';
 import { TenantScopedEntity } from '../entities/tenant-scoped.entity';
 import { applyTenantScope } from '../helpers/apply-tenant-scope.helper';
@@ -35,7 +35,8 @@ export abstract class TenantScopedRepository<T extends TenantScopedEntity> {
 
   protected assertTenantOwnership(entity: T): void {
     if (entity.organizationId !== this.organizationId) {
-      throw new ForbiddenException(
+      throw AppException.forbidden(
+        ErrorCode.TENANT_ORGANIZATION_FORBIDDEN,
         'Resource does not belong to the current organization.',
       );
     }

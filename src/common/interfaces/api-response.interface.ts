@@ -11,6 +11,7 @@ export interface ApiSuccessResponse<T> {
 }
 
 export interface ApiErrorBody {
+  code: string;
   statusCode: number;
   message: string | string[];
   error?: string;

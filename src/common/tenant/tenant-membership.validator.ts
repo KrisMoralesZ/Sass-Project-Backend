@@ -1,4 +1,5 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { AppException, ErrorCode } from '../errors';
 import { AuthenticatedUser } from './interfaces/tenant-context.interface';
 
 @Injectable()
@@ -13,7 +14,8 @@ export class TenantMembershipValidator {
 
     const isMember = await this.isMember(user.id, organizationId);
     if (!isMember) {
-      throw new ForbiddenException(
+      throw AppException.forbidden(
+        ErrorCode.TENANT_ORGANIZATION_FORBIDDEN,
         'You do not have access to this organization.',
       );
     }
