@@ -1,3 +1,4 @@
+import { hash } from 'bcrypt';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppException } from '../common/errors';
@@ -64,10 +65,12 @@ describe('AuthenticationService', () => {
   });
 
   it('logs in an existing user with the correct password', async () => {
+    const passwordHash = await hash('StrongPass123!', 10);
+
     repository.findOne.mockResolvedValue({
       id: 'user-1',
       email: 'alice@example.com',
-      passwordHash: 'hashed:StrongPass123!',
+      passwordHash,
       displayName: 'Alice',
       isEmailVerified: false,
     });

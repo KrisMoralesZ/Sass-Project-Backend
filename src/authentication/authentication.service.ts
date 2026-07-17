@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { compare, hash } from 'bcrypt';
 import { Repository } from 'typeorm';
 import { AppException, ErrorCode } from '../common/errors';
 import { LoginAuthDto } from './dto/login-auth.dto';
@@ -9,6 +10,9 @@ import { User } from './entities/user.entity';
 
 @Injectable()
 export class AuthenticationService {
+  private readonly failedLoginAttempts = new Map<string, number>();
+  private readonly lockoutUntil = new Map<string, number>();
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -23,7 +27,7 @@ export class AuthenticationService {
       throw AppException.conflict('Email already registered');
     }
 
-    const passwordHash = this.hashPassword(dto.password);
+    const passwordHash = await this.hashPassword(dto.password);
     const user = this.userRepository.create({
       email: dto.email,
       passwordHash,
@@ -37,13 +41,36 @@ export class AuthenticationService {
   }
 
   async login(dto: LoginAuthDto) {
+    const normalizedEmail = dto.email.toLowerCase();
+    const now = Date.now();
+    const lockoutUntilValue = this.lockoutUntil.get(normalizedEmail) ?? 0;
+
+    if (lockoutUntilValue > now) {
+      throw AppException.unauthorized(
+        'Too many failed login attempts. Try again later.',
+      );
+    }
+
     const user = await this.userRepository.findOne({
-      where: { email: dto.email },
+      where: { email: normalizedEmail },
     });
 
-    if (!user || user.passwordHash !== this.hashPassword(dto.password)) {
+    if (!user) {
+      this.registerFailedAttempt(normalizedEmail);
       throw AppException.unauthorized('Invalid email or password');
     }
+
+    const isValidPassword = await this.comparePassword(
+      dto.password,
+      user.passwordHash,
+    );
+    if (!isValidPassword) {
+      this.registerFailedAttempt(normalizedEmail);
+      throw AppException.unauthorized('Invalid email or password');
+    }
+
+    this.failedLoginAttempts.delete(normalizedEmail);
+    this.lockoutUntil.delete(normalizedEmail);
 
     return this.buildAuthResponse(user);
   }
@@ -108,8 +135,25 @@ export class AuthenticationService {
     };
   }
 
-  private hashPassword(password: string): string {
-    return `hashed:${password}`;
+  private registerFailedAttempt(email: string): void {
+    const currentAttempts = (this.failedLoginAttempts.get(email) ?? 0) + 1;
+    this.failedLoginAttempts.set(email, currentAttempts);
+
+    if (currentAttempts >= 5) {
+      this.lockoutUntil.set(email, Date.now() + 15 * 60 * 1000);
+      this.failedLoginAttempts.delete(email);
+    }
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    return hash(password, 10);
+  }
+
+  private async comparePassword(
+    password: string,
+    hashedPassword: string,
+  ): Promise<boolean> {
+    return compare(password, hashedPassword);
   }
 
   private createToken(userId: string, type: 'access' | 'refresh'): string {
