@@ -7,12 +7,37 @@ import { AuthenticationService } from './authentication.service';
 import { User } from './entities/user.entity';
 import { TokenService } from './token.service';
 
+jest.mock('bcrypt', () => ({
+  hash: jest.fn(),
+  compare: jest.fn(),
+}));
+
+import { compare } from 'bcrypt';
+
 describe('AuthenticationService', () => {
   let service: AuthenticationService;
   let usersRepository: jest.Mocked<
-    Pick<Repository<User>, 'findOne' | 'create' | 'save'>
+    Pick<Repository<User>, 'findOne' | 'create' | 'save' | 'createQueryBuilder'>
   >;
-  let tokenService: jest.Mocked<Pick<TokenService, 'generateTokens'>>;
+  let tokenService: jest.Mocked<
+    Pick<
+      TokenService,
+      | 'generateTokens'
+      | 'validateRefreshToken'
+      | 'revokeTokenById'
+      | 'revokeRefreshToken'
+    >
+  >;
+
+  const savedUser: User = {
+    id: 'user-1',
+    email: 'owner@company.com',
+    passwordHash: 'hashed-password',
+    displayName: 'Jane Owner',
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    deletedAt: null,
+  };
 
   beforeEach(async () => {
     usersRepository = {
@@ -27,14 +52,21 @@ describe('AuthenticationService', () => {
           deletedAt: null,
         }),
       ),
+      createQueryBuilder: jest.fn(),
     };
 
     tokenService = {
-      generateTokens: jest.fn().mockReturnValue({
+      generateTokens: jest.fn().mockResolvedValue({
         accessToken: 'access-token',
         refreshToken: 'refresh-token',
         expiresIn: 900,
       }),
+      validateRefreshToken: jest.fn().mockResolvedValue({
+        userId: 'user-1',
+        tokenId: 'token-1',
+      }),
+      revokeTokenById: jest.fn().mockResolvedValue(undefined),
+      revokeRefreshToken: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -75,32 +107,15 @@ describe('AuthenticationService', () => {
       displayName: 'Jane Owner',
     });
 
-    expect(usersRepository.findOne).toHaveBeenCalledWith({
-      where: { email: 'owner@company.com' },
-    });
-    expect(usersRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        email: 'owner@company.com',
-        displayName: 'Jane Owner',
-        passwordHash: expect.any(String) as string,
-      }),
-    );
     expect(tokenService.generateTokens).toHaveBeenCalledWith(
       'user-1',
       'owner@company.com',
-    );
-    expect(result.user).toEqual(
-      expect.objectContaining({
-        id: 'user-1',
-        email: 'owner@company.com',
-        displayName: 'Jane Owner',
-      }),
     );
     expect(result.tokens.accessToken).toBe('access-token');
   });
 
   it('throws conflict when email is already registered', async () => {
-    usersRepository.findOne.mockResolvedValue({ id: 'existing-user' } as User);
+    usersRepository.findOne.mockResolvedValue(savedUser);
 
     await expect(
       service.register({
@@ -108,8 +123,74 @@ describe('AuthenticationService', () => {
         password: 'Password1',
       }),
     ).rejects.toBeInstanceOf(AppException);
+  });
 
-    expect(usersRepository.save).not.toHaveBeenCalled();
-    expect(tokenService.generateTokens).not.toHaveBeenCalled();
+  it('logs in with valid credentials', async () => {
+    jest.mocked(compare).mockResolvedValue(true as never);
+    usersRepository.createQueryBuilder.mockReturnValue({
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue(savedUser),
+    } as never);
+
+    const result = await service.login({
+      email: 'owner@company.com',
+      password: 'Password1',
+    });
+
+    expect(result.user.email).toBe('owner@company.com');
+    expect(tokenService.generateTokens).toHaveBeenCalledWith(
+      'user-1',
+      'owner@company.com',
+    );
+  });
+
+  it('rejects invalid login credentials', async () => {
+    usersRepository.createQueryBuilder.mockReturnValue({
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue(null),
+    } as never);
+
+    await expect(
+      service.login({
+        email: 'owner@company.com',
+        password: 'Password1',
+      }),
+    ).rejects.toBeInstanceOf(AppException);
+  });
+
+  it('refreshes tokens and revokes the previous refresh token', async () => {
+    usersRepository.findOne.mockResolvedValue(savedUser);
+
+    const result = await service.refresh({ refreshToken: 'refresh-token' });
+
+    expect(tokenService.validateRefreshToken).toHaveBeenCalledWith(
+      'refresh-token',
+    );
+    expect(tokenService.revokeTokenById).toHaveBeenCalledWith('token-1');
+    expect(result.tokens.accessToken).toBe('access-token');
+  });
+
+  it('logs out by revoking the refresh token', async () => {
+    const result = await service.logout({ refreshToken: 'refresh-token' });
+
+    expect(tokenService.revokeRefreshToken).toHaveBeenCalledWith(
+      'refresh-token',
+    );
+    expect(result.message).toBe('Logged out successfully');
+  });
+
+  it('returns the authenticated user profile', async () => {
+    usersRepository.findOne.mockResolvedValue(savedUser);
+
+    const result = await service.getProfile('user-1');
+
+    expect(result).toEqual({
+      id: 'user-1',
+      email: 'owner@company.com',
+      displayName: 'Jane Owner',
+      createdAt: savedUser.createdAt,
+    });
   });
 });

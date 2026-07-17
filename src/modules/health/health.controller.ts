@@ -1,6 +1,7 @@
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { Public } from '../../common/decorators/public.decorator';
 import { OptionalOrganization } from '../../common/tenant';
 import {
   HealthCheckResponseDto,
@@ -9,6 +10,7 @@ import {
 import { HealthService } from './health.service';
 
 @ApiTags('health')
+@Public()
 @OptionalOrganization()
 @Controller({ path: 'health', version: '1' })
 export class HealthController {

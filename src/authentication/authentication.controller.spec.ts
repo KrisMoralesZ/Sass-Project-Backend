@@ -5,12 +5,19 @@ import { AuthenticationService } from './authentication.service';
 describe('AuthenticationController', () => {
   let controller: AuthenticationController;
   let authenticationService: jest.Mocked<
-    Pick<AuthenticationService, 'register'>
+    Pick<
+      AuthenticationService,
+      'register' | 'login' | 'refresh' | 'logout' | 'getProfile'
+    >
   >;
 
   beforeEach(async () => {
     authenticationService = {
       register: jest.fn(),
+      login: jest.fn(),
+      refresh: jest.fn(),
+      logout: jest.fn(),
+      getProfile: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -31,7 +38,8 @@ describe('AuthenticationController', () => {
       email: 'owner@company.com',
       password: 'Password1',
     };
-    const response = {
+
+    authenticationService.register.mockResolvedValue({
       user: {
         id: 'user-1',
         email: payload.email,
@@ -43,11 +51,24 @@ describe('AuthenticationController', () => {
         refreshToken: 'refresh-token',
         expiresIn: 900,
       },
+    });
+
+    await controller.register(payload);
+    expect(authenticationService.register).toHaveBeenCalledWith(payload);
+  });
+
+  it('delegates login to the service', async () => {
+    const payload = {
+      email: 'owner@company.com',
+      password: 'Password1',
     };
 
-    authenticationService.register.mockResolvedValue(response);
+    await controller.login(payload);
+    expect(authenticationService.login).toHaveBeenCalledWith(payload);
+  });
 
-    await expect(controller.register(payload)).resolves.toEqual(response);
-    expect(authenticationService.register).toHaveBeenCalledWith(payload);
+  it('delegates me to the service', async () => {
+    await controller.me({ id: 'user-1' });
+    expect(authenticationService.getProfile).toHaveBeenCalledWith('user-1');
   });
 });

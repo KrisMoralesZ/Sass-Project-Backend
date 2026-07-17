@@ -4,9 +4,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { AppException } from '../common/errors';
+import { LoginDto } from './dto/login.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { RegisterDto } from './dto/register.dto';
 import { User } from './entities/user.entity';
-import { AuthUserProfile, RegisterResponse } from './interfaces/auth.interface';
+import {
+  AuthUserProfile,
+  LoginResponse,
+  LogoutResponse,
+  RefreshResponse,
+  RegisterResponse,
+} from './interfaces/auth.interface';
 import { TokenService } from './token.service';
 
 @Injectable()
@@ -38,7 +46,7 @@ export class AuthenticationService {
     });
 
     const savedUser = await this.usersRepository.save(user);
-    const tokens = this.tokenService.generateTokens(
+    const tokens = await this.tokenService.generateTokens(
       savedUser.id,
       savedUser.email,
     );
@@ -47,6 +55,67 @@ export class AuthenticationService {
       user: this.toUserProfile(savedUser),
       tokens,
     };
+  }
+
+  async login(dto: LoginDto): Promise<LoginResponse> {
+    const normalizedEmail = dto.email.trim().toLowerCase();
+    const user = await this.findByEmailWithPassword(normalizedEmail);
+
+    if (!user || !(await bcrypt.compare(dto.password, user.passwordHash))) {
+      throw AppException.unauthorized('Invalid email or password');
+    }
+
+    const tokens = await this.tokenService.generateTokens(user.id, user.email);
+
+    return {
+      user: this.toUserProfile(user),
+      tokens,
+    };
+  }
+
+  async refresh(dto: RefreshTokenDto): Promise<RefreshResponse> {
+    const { userId, tokenId } = await this.tokenService.validateRefreshToken(
+      dto.refreshToken,
+    );
+
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw AppException.unauthorized('Invalid refresh token');
+    }
+
+    await this.tokenService.revokeTokenById(tokenId);
+    const tokens = await this.tokenService.generateTokens(user.id, user.email);
+
+    return { tokens };
+  }
+
+  async logout(dto: RefreshTokenDto): Promise<LogoutResponse> {
+    await this.tokenService.revokeRefreshToken(dto.refreshToken);
+
+    return { message: 'Logged out successfully' };
+  }
+
+  async getProfile(userId: string): Promise<AuthUserProfile> {
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw AppException.unauthorized('User not found');
+    }
+
+    return this.toUserProfile(user);
+  }
+
+  private async findByEmailWithPassword(email: string): Promise<User | null> {
+    return this.usersRepository
+      .createQueryBuilder('user')
+      .addSelect('user.passwordHash')
+      .where('user.email = :email', { email })
+      .getOne();
   }
 
   private async hashPassword(password: string): Promise<string> {

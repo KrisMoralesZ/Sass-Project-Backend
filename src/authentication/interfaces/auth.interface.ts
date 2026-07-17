@@ -25,4 +25,18 @@ export interface JwtAccessPayload {
 export interface JwtRefreshPayload {
   sub: string;
   type: 'refresh';
+  jti: string;
+}
+
+export interface LoginResponse {
+  user: AuthUserProfile;
+  tokens: AuthTokens;
+}
+
+export interface RefreshResponse {
+  tokens: AuthTokens;
+}
+
+export interface LogoutResponse {
+  message: string;
 }

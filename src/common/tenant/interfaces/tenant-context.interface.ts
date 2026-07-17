@@ -4,6 +4,7 @@ export interface TenantContext {
 
 export interface AuthenticatedUser {
   id: string;
+  email?: string;
   organizationId?: string;
 }
 
