@@ -59,6 +59,26 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsString()
   SWAGGER_PATH?: string;
+
+  @IsString()
+  JWT_ACCESS_SECRET: string;
+
+  @IsString()
+  JWT_REFRESH_SECRET: string;
+
+  @IsOptional()
+  @IsString()
+  JWT_ACCESS_EXPIRES_IN?: string;
+
+  @IsOptional()
+  @IsString()
+  JWT_REFRESH_EXPIRES_IN?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(4)
+  @Max(20)
+  BCRYPT_ROUNDS?: number;
 }
 
 export function validate(

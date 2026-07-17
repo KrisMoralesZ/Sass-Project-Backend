@@ -1,26 +1,65 @@
 import { Injectable } from '@nestjs/common';
-import { CreateAuthenticationDto } from './dto/create-authentication.dto';
-import { UpdateAuthenticationDto } from './dto/update-authentication.dto';
+import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
+import { Repository } from 'typeorm';
+import { AppException } from '../common/errors';
+import { RegisterDto } from './dto/register.dto';
+import { User } from './entities/user.entity';
+import { AuthUserProfile, RegisterResponse } from './interfaces/auth.interface';
+import { TokenService } from './token.service';
 
 @Injectable()
 export class AuthenticationService {
-  create(createAuthenticationDto: CreateAuthenticationDto) {
-    return 'This action adds a new authentication';
+  constructor(
+    @InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
+    private readonly configService: ConfigService,
+    private readonly tokenService: TokenService,
+  ) {}
+
+  async register(dto: RegisterDto): Promise<RegisterResponse> {
+    const normalizedEmail = dto.email.trim().toLowerCase();
+
+    const existingUser = await this.usersRepository.findOne({
+      where: { email: normalizedEmail },
+    });
+
+    if (existingUser) {
+      throw AppException.conflict('Email is already registered');
+    }
+
+    const passwordHash = await this.hashPassword(dto.password);
+
+    const user = this.usersRepository.create({
+      email: normalizedEmail,
+      passwordHash,
+      displayName: dto.displayName?.trim() ?? null,
+    });
+
+    const savedUser = await this.usersRepository.save(user);
+    const tokens = this.tokenService.generateTokens(
+      savedUser.id,
+      savedUser.email,
+    );
+
+    return {
+      user: this.toUserProfile(savedUser),
+      tokens,
+    };
   }
 
-  findAll() {
-    return `This action returns all authentication`;
+  private async hashPassword(password: string): Promise<string> {
+    const rounds = this.configService.get<number>('auth.bcryptRounds', 12);
+    return bcrypt.hash(password, rounds);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} authentication`;
-  }
-
-  update(id: number, updateAuthenticationDto: UpdateAuthenticationDto) {
-    return `This action updates a #${id} authentication`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} authentication`;
+  private toUserProfile(user: User): AuthUserProfile {
+    return {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      createdAt: user.createdAt,
+    };
   }
 }
