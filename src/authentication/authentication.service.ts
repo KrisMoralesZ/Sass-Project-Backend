@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AppException } from '../common/errors';
+import { AppException, ErrorCode } from '../common/errors';
+import { LoginAuthDto } from './dto/login-auth.dto';
+import { RefreshAuthDto } from './dto/refresh-auth.dto';
 import { RegisterAuthDto } from './dto/register-auth.dto';
 import { User } from './entities/user.entity';
 
@@ -31,14 +33,77 @@ export class AuthenticationService {
 
     const savedUser = await this.userRepository.save(user);
 
+    return this.buildAuthResponse(savedUser);
+  }
+
+  async login(dto: LoginAuthDto) {
+    const user = await this.userRepository.findOne({
+      where: { email: dto.email },
+    });
+
+    if (!user || user.passwordHash !== this.hashPassword(dto.password)) {
+      throw AppException.unauthorized('Invalid email or password');
+    }
+
+    return this.buildAuthResponse(user);
+  }
+
+  async refresh(dto: RefreshAuthDto) {
+    if (!dto.refreshToken || !dto.refreshToken.includes('refresh-token-for-')) {
+      throw AppException.unauthorized('Invalid refresh token');
+    }
+
+    const userId = dto.refreshToken.split('refresh-token-for-').pop();
+    if (!userId) {
+      throw AppException.unauthorized('Invalid refresh token');
+    }
+
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw AppException.unauthorized('Invalid refresh token');
+    }
+
+    return this.buildAuthResponse(user);
+  }
+
+  logout(authHeader?: string): void {
+    if (!authHeader) {
+      throw AppException.badRequest(
+        ErrorCode.UNAUTHORIZED,
+        'Authorization header is required',
+      );
+    }
+  }
+
+  async me(authHeader?: string) {
+    if (!authHeader) {
+      throw AppException.unauthorized('Authorization header is required');
+    }
+
+    const userId = authHeader.replace('Bearer ', '').replace('bearer ', '');
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw AppException.unauthorized('Invalid token');
+    }
+
     return {
-      accessToken: this.createToken(savedUser.id, 'access'),
-      refreshToken: this.createToken(savedUser.id, 'refresh'),
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      isEmailVerified: user.isEmailVerified,
+    };
+  }
+
+  private buildAuthResponse(user: User) {
+    return {
+      accessToken: this.createToken(user.id, 'access'),
+      refreshToken: this.createToken(user.id, 'refresh'),
       user: {
-        id: savedUser.id,
-        email: savedUser.email,
-        displayName: savedUser.displayName,
-        isEmailVerified: savedUser.isEmailVerified,
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        isEmailVerified: user.isEmailVerified,
       },
     };
   }

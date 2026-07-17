@@ -62,4 +62,50 @@ describe('AuthenticationService', () => {
       }),
     ).rejects.toBeInstanceOf(AppException);
   });
+
+  it('logs in an existing user with the correct password', async () => {
+    repository.findOne.mockResolvedValue({
+      id: 'user-1',
+      email: 'alice@example.com',
+      passwordHash: 'hashed:StrongPass123!',
+      displayName: 'Alice',
+      isEmailVerified: false,
+    });
+
+    const result = await service.login({
+      email: 'alice@example.com',
+      password: 'StrongPass123!',
+    });
+
+    expect(result.accessToken).toBeDefined();
+    expect(result.user.email).toBe('alice@example.com');
+  });
+
+  it('rejects invalid credentials on login', async () => {
+    repository.findOne.mockResolvedValue(null);
+
+    await expect(
+      service.login({
+        email: 'alice@example.com',
+        password: 'WrongPass123!',
+      }),
+    ).rejects.toBeInstanceOf(AppException);
+  });
+
+  it('refreshes tokens for a valid refresh token', async () => {
+    repository.findOne.mockResolvedValue({
+      id: 'user-1',
+      email: 'alice@example.com',
+      passwordHash: 'hashed:StrongPass123!',
+      displayName: 'Alice',
+      isEmailVerified: false,
+    });
+
+    const result = await service.refresh({
+      refreshToken: 'refresh-token-for-user-1',
+    });
+
+    expect(result.accessToken).toBeDefined();
+    expect(result.refreshToken).toBeDefined();
+  });
 });
