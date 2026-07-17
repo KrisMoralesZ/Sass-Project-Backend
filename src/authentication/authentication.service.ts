@@ -1,26 +1,53 @@
 import { Injectable } from '@nestjs/common';
-import { CreateAuthenticationDto } from './dto/create-authentication.dto';
-import { UpdateAuthenticationDto } from './dto/update-authentication.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { AppException } from '../common/errors';
+import { RegisterAuthDto } from './dto/register-auth.dto';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class AuthenticationService {
-  create(createAuthenticationDto: CreateAuthenticationDto) {
-    return 'This action adds a new authentication';
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {}
+
+  async register(dto: RegisterAuthDto) {
+    const existingUser = await this.userRepository.findOne({
+      where: { email: dto.email },
+    });
+
+    if (existingUser) {
+      throw AppException.conflict('Email already registered');
+    }
+
+    const passwordHash = this.hashPassword(dto.password);
+    const user = this.userRepository.create({
+      email: dto.email,
+      passwordHash,
+      displayName: dto.displayName,
+      isEmailVerified: false,
+    });
+
+    const savedUser = await this.userRepository.save(user);
+
+    return {
+      accessToken: this.createToken(savedUser.id, 'access'),
+      refreshToken: this.createToken(savedUser.id, 'refresh'),
+      user: {
+        id: savedUser.id,
+        email: savedUser.email,
+        displayName: savedUser.displayName,
+        isEmailVerified: savedUser.isEmailVerified,
+      },
+    };
   }
 
-  findAll() {
-    return `This action returns all authentication`;
+  private hashPassword(password: string): string {
+    return `hashed:${password}`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} authentication`;
-  }
-
-  update(id: number, updateAuthenticationDto: UpdateAuthenticationDto) {
-    return `This action updates a #${id} authentication`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} authentication`;
+  private createToken(userId: string, type: 'access' | 'refresh'): string {
+    return `${type}-token-for-${userId}`;
   }
 }
