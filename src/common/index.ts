@@ -1,4 +1,5 @@
 export * from './dto';
+export * from './decorators/public.decorator';
 export * from './enums/sort-order.enum';
 export * from './errors';
 export * from './filters/http-exception.filter';

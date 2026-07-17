@@ -1,9 +1,13 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
+import { Public } from '../decorators/public.decorator';
 import { ORGANIZATION_ID_HEADER } from './constants/tenant.constants';
 import { CurrentOrganization } from './decorators/current-organization.decorator';
 
 @ApiTags('tenant')
+@SkipThrottle()
+@Public()
 @Controller({ path: 'tenant', version: '1' })
 export class TenantContextController {
   @Get('context')
