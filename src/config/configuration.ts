@@ -25,6 +25,17 @@ export default () => ({
     jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
     jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? '15m',
     jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
+    maxFailedLoginAttempts: parseInt(
+      process.env.AUTH_MAX_FAILED_ATTEMPTS ?? '5',
+      10,
+    ),
+    lockoutMinutes: parseInt(process.env.AUTH_LOCKOUT_MINUTES ?? '15', 10),
+  },
+  throttle: {
+    defaultTtlMs: parseInt(process.env.THROTTLE_TTL_MS ?? '60000', 10),
+    defaultLimit: parseInt(process.env.THROTTLE_LIMIT ?? '120', 10),
+    authTtlMs: parseInt(process.env.AUTH_RATE_LIMIT_TTL_MS ?? '60000', 10),
+    authLimit: parseInt(process.env.AUTH_RATE_LIMIT_MAX ?? '5', 10),
   },
   database: {
     host: process.env.DATABASE_HOST,

@@ -11,6 +11,7 @@ import { RefreshToken } from './entities/refresh-token.entity';
 import { User } from './entities/user.entity';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { AccountLockoutService } from './services/account-lockout.service';
 import { TokenService } from './token.service';
 
 @Module({
@@ -30,6 +31,7 @@ import { TokenService } from './token.service';
   providers: [
     AuthenticationService,
     TokenService,
+    AccountLockoutService,
     JwtStrategy,
     {
       provide: APP_GUARD,

@@ -16,6 +16,7 @@ import {
   RegisterResponse,
 } from './interfaces/auth.interface';
 import { TokenService } from './token.service';
+import { AccountLockoutService } from './services/account-lockout.service';
 
 @Injectable()
 export class AuthenticationService {
@@ -24,6 +25,7 @@ export class AuthenticationService {
     private readonly usersRepository: Repository<User>,
     private readonly configService: ConfigService,
     private readonly tokenService: TokenService,
+    private readonly accountLockoutService: AccountLockoutService,
   ) {}
 
   async register(dto: RegisterDto): Promise<RegisterResponse> {
@@ -61,10 +63,18 @@ export class AuthenticationService {
     const normalizedEmail = dto.email.trim().toLowerCase();
     const user = await this.findByEmailWithPassword(normalizedEmail);
 
-    if (!user || !(await bcrypt.compare(dto.password, user.passwordHash))) {
+    if (!user) {
       throw AppException.unauthorized('Invalid email or password');
     }
 
+    this.accountLockoutService.assertNotLocked(user);
+
+    if (!(await bcrypt.compare(dto.password, user.passwordHash))) {
+      await this.accountLockoutService.recordFailedAttempt(user);
+      throw AppException.unauthorized('Invalid email or password');
+    }
+
+    await this.accountLockoutService.resetAttempts(user.id);
     const tokens = await this.tokenService.generateTokens(user.id, user.email);
 
     return {

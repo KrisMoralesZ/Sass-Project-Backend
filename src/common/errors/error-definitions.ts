@@ -47,6 +47,14 @@ export const ERROR_DEFINITIONS: Record<ErrorCode, ErrorDefinition> = {
     status: HttpStatus.BAD_REQUEST,
     message: 'Invalid sort field',
   },
+  [ErrorCode.TOO_MANY_REQUESTS]: {
+    status: HttpStatus.TOO_MANY_REQUESTS,
+    message: 'Too many requests',
+  },
+  [ErrorCode.ACCOUNT_LOCKED]: {
+    status: HttpStatus.FORBIDDEN,
+    message: 'Account temporarily locked',
+  },
 };
 
 export const DEFAULT_ERROR_CODE_BY_STATUS: Partial<
@@ -57,5 +65,6 @@ export const DEFAULT_ERROR_CODE_BY_STATUS: Partial<
   [HttpStatus.FORBIDDEN]: ErrorCode.FORBIDDEN,
   [HttpStatus.NOT_FOUND]: ErrorCode.RESOURCE_NOT_FOUND,
   [HttpStatus.CONFLICT]: ErrorCode.CONFLICT,
+  [HttpStatus.TOO_MANY_REQUESTS]: ErrorCode.TOO_MANY_REQUESTS,
   [HttpStatus.INTERNAL_SERVER_ERROR]: ErrorCode.INTERNAL_SERVER_ERROR,
 };

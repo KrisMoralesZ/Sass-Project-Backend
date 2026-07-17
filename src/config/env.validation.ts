@@ -79,6 +79,36 @@ export class EnvironmentVariables {
   @Min(4)
   @Max(20)
   BCRYPT_ROUNDS?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  AUTH_MAX_FAILED_ATTEMPTS?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  AUTH_LOCKOUT_MINUTES?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1000)
+  THROTTLE_TTL_MS?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  THROTTLE_LIMIT?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1000)
+  AUTH_RATE_LIMIT_TTL_MS?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  AUTH_RATE_LIMIT_MAX?: number;
 }
 
 export function validate(

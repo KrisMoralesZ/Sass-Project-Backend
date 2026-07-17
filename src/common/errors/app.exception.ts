@@ -61,4 +61,8 @@ export class AppException extends HttpException {
 
     return exception;
   }
+
+  static tooManyRequests(message?: string): AppException {
+    return new AppException(ErrorCode.TOO_MANY_REQUESTS, message);
+  }
 }

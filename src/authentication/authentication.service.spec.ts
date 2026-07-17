@@ -2,10 +2,11 @@ import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AppException } from '../common/errors';
+import { AppException, ErrorCode } from '../common/errors';
 import { AuthenticationService } from './authentication.service';
 import { User } from './entities/user.entity';
 import { TokenService } from './token.service';
+import { AccountLockoutService } from './services/account-lockout.service';
 
 jest.mock('bcrypt', () => ({
   hash: jest.fn(),
@@ -29,11 +30,20 @@ describe('AuthenticationService', () => {
     >
   >;
 
+  let accountLockoutService: jest.Mocked<
+    Pick<
+      AccountLockoutService,
+      'assertNotLocked' | 'recordFailedAttempt' | 'resetAttempts'
+    >
+  >;
+
   const savedUser: User = {
     id: 'user-1',
     email: 'owner@company.com',
     passwordHash: 'hashed-password',
     displayName: 'Jane Owner',
+    failedLoginAttempts: 0,
+    lockedUntil: null,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     deletedAt: null,
@@ -69,6 +79,12 @@ describe('AuthenticationService', () => {
       revokeRefreshToken: jest.fn().mockResolvedValue(undefined),
     };
 
+    accountLockoutService = {
+      assertNotLocked: jest.fn(),
+      recordFailedAttempt: jest.fn().mockResolvedValue(undefined),
+      resetAttempts: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthenticationService,
@@ -91,6 +107,10 @@ describe('AuthenticationService', () => {
         {
           provide: TokenService,
           useValue: tokenService,
+        },
+        {
+          provide: AccountLockoutService,
+          useValue: accountLockoutService,
         },
       ],
     }).compile();
@@ -139,6 +159,7 @@ describe('AuthenticationService', () => {
     });
 
     expect(result.user.email).toBe('owner@company.com');
+    expect(accountLockoutService.resetAttempts).toHaveBeenCalledWith('user-1');
     expect(tokenService.generateTokens).toHaveBeenCalledWith(
       'user-1',
       'owner@company.com',
@@ -150,6 +171,49 @@ describe('AuthenticationService', () => {
       addSelect: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       getOne: jest.fn().mockResolvedValue(null),
+    } as never);
+
+    await expect(
+      service.login({
+        email: 'owner@company.com',
+        password: 'Password1',
+      }),
+    ).rejects.toBeInstanceOf(AppException);
+
+    expect(accountLockoutService.recordFailedAttempt).not.toHaveBeenCalled();
+  });
+
+  it('records failed attempts for invalid passwords', async () => {
+    jest.mocked(compare).mockResolvedValue(false as never);
+    usersRepository.createQueryBuilder.mockReturnValue({
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue(savedUser),
+    } as never);
+
+    await expect(
+      service.login({
+        email: 'owner@company.com',
+        password: 'WrongPass1',
+      }),
+    ).rejects.toBeInstanceOf(AppException);
+
+    expect(accountLockoutService.recordFailedAttempt).toHaveBeenCalledWith(
+      savedUser,
+    );
+  });
+
+  it('rejects login for locked accounts', async () => {
+    accountLockoutService.assertNotLocked.mockImplementation(() => {
+      throw AppException.forbidden(
+        ErrorCode.ACCOUNT_LOCKED,
+        'Account temporarily locked',
+      );
+    });
+    usersRepository.createQueryBuilder.mockReturnValue({
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue(savedUser),
     } as never);
 
     await expect(
