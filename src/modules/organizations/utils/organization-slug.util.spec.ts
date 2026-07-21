@@ -1,4 +1,5 @@
 import {
+  appendOrganizationSlugSuffix,
   slugifyOrganizationName,
   normalizeOrganizationSlug,
 } from './organization-slug.util';
@@ -15,5 +16,13 @@ describe('organization-slug.util', () => {
 
   it('falls back when slugify produces an empty value', () => {
     expect(slugifyOrganizationName('!!!')).toBe('organization');
+  });
+
+  it('appends numeric suffixes without exceeding max length', () => {
+    expect(appendOrganizationSlugSuffix('acme-corp', 2)).toBe('acme-corp-2');
+
+    const longBase = 'a'.repeat(120);
+    expect(appendOrganizationSlugSuffix(longBase, 12)).toHaveLength(120);
+    expect(appendOrganizationSlugSuffix(longBase, 12)).toMatch(/-12$/);
   });
 });

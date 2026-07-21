@@ -21,9 +21,12 @@ import {
   OrganizationSettings,
 } from './interfaces/organization-settings.interface';
 import {
+  appendOrganizationSlugSuffix,
   normalizeOrganizationSlug,
   slugifyOrganizationName,
 } from './utils/organization-slug.util';
+
+const MAX_SLUG_COLLISION_ATTEMPTS = 100;
 
 @Injectable()
 export class OrganizationsService {
@@ -38,11 +41,13 @@ export class OrganizationsService {
   ): Promise<OrganizationResponse> {
     void _userId;
 
-    const slug = await this.resolveAvailableSlug(
-      dto.slug
-        ? normalizeOrganizationSlug(dto.slug)
-        : slugifyOrganizationName(dto.name),
-    );
+    const baseSlug = dto.slug
+      ? normalizeOrganizationSlug(dto.slug)
+      : slugifyOrganizationName(dto.name);
+
+    const slug = await this.resolveAvailableSlug(baseSlug, {
+      requireExactMatch: Boolean(dto.slug),
+    });
 
     const organization = this.organizationsRepository.create({
       name: dto.name.trim(),
@@ -146,24 +151,54 @@ export class OrganizationsService {
     return organization;
   }
 
-  private async resolveAvailableSlug(baseSlug: string): Promise<string> {
-    await this.assertSlugIsAvailable(baseSlug);
-    return baseSlug;
+  private async resolveAvailableSlug(
+    baseSlug: string,
+    options: { requireExactMatch?: boolean } = {},
+  ): Promise<string> {
+    const { requireExactMatch = false } = options;
+
+    if (requireExactMatch) {
+      await this.assertSlugIsAvailable(baseSlug);
+      return baseSlug;
+    }
+
+    if (await this.isSlugAvailable(baseSlug)) {
+      return baseSlug;
+    }
+
+    for (let suffix = 2; suffix <= MAX_SLUG_COLLISION_ATTEMPTS; suffix += 1) {
+      const candidate = appendOrganizationSlugSuffix(baseSlug, suffix);
+
+      if (await this.isSlugAvailable(candidate)) {
+        return candidate;
+      }
+    }
+
+    throw AppException.conflict(
+      `Unable to generate a unique slug for "${baseSlug}"`,
+    );
+  }
+
+  private async isSlugAvailable(
+    slug: string,
+    excludeOrganizationId?: string,
+  ): Promise<boolean> {
+    const existingOrganization = await this.organizationsRepository.findOne({
+      where: { slug },
+      withDeleted: false,
+    });
+
+    return (
+      !existingOrganization ||
+      existingOrganization.id === excludeOrganizationId
+    );
   }
 
   private async assertSlugIsAvailable(
     slug: string,
     excludeOrganizationId?: string,
   ): Promise<void> {
-    const existingOrganization = await this.organizationsRepository.findOne({
-      where: { slug },
-      withDeleted: false,
-    });
-
-    if (
-      existingOrganization &&
-      existingOrganization.id !== excludeOrganizationId
-    ) {
+    if (!(await this.isSlugAvailable(slug, excludeOrganizationId))) {
       throw AppException.conflict(
         `Organization slug "${slug}" is already taken`,
       );
