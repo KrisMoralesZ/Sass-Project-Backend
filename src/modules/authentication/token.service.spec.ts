@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AppException } from '../common/errors';
+import { AppException } from '../../common/errors';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { TokenService } from './token.service';
 

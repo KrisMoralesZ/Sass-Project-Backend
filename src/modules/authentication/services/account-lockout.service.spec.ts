@@ -2,7 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AppException, ErrorCode } from '../../common/errors';
+import { AppException, ErrorCode } from '../../../common/errors';
 import { User } from '../entities/user.entity';
 import { AccountLockoutService } from './account-lockout.service';
 
