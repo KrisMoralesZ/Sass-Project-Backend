@@ -1,9 +1,9 @@
-import { ErrorCode } from '../../errors';
+import { ErrorCode } from '@common/errors';
 import { Reflector } from '@nestjs/core';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
-import { TenantGuard } from './tenant.guard';
-import { TenantMembershipValidator } from '../tenant-membership.validator';
-import { RequestWithTenantContext } from '../types/request-with-tenant-context.type';
+import { TenantGuard } from '@common/tenant/guards/tenant.guard';
+import { TenantMembershipValidator } from '@common/tenant/tenant-membership.validator';
+import { RequestWithTenantContext } from '@common/tenant/types/request-with-tenant-context.type';
 
 describe('TenantGuard', () => {
   let guard: TenantGuard;

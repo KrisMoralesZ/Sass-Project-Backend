@@ -2,7 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AppException, ErrorCode } from '../../common/errors';
+import { AppException, ErrorCode } from '@common/errors';
 import { AuthenticationService } from './authentication.service';
 import { User } from './entities/user.entity';
 import { TokenService } from './token.service';

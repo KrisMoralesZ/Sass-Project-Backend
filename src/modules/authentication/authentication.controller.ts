@@ -13,9 +13,9 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Public } from '../../common/decorators/public.decorator';
-import { AUTH_THROTTLE_NAME } from '../../common/security/throttle.constants';
-import { OptionalOrganization } from '../../common/tenant';
+import { Public } from '@common/decorators/public.decorator';
+import { AUTH_THROTTLE_NAME } from '@common/security/throttle.constants';
+import { OptionalOrganization } from '@common/tenant';
 import { AuthenticationService } from './authentication.service';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { LoginDto } from './dto/login.dto';

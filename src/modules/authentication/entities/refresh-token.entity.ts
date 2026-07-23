@@ -1,5 +1,5 @@
 import { Column, Entity, Index } from 'typeorm';
-import { BaseEntity } from '../../../database/entities/base.entity';
+import { BaseEntity } from '@database/entities/base.entity';
 
 @Entity('refresh_tokens')
 export class RefreshToken extends BaseEntity {

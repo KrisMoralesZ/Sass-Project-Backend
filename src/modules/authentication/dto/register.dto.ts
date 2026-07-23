@@ -6,7 +6,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { StrongPasswordProperty } from '../decorators/strong-password.decorator';
+import { StrongPasswordProperty } from '@authentication/decorators/strong-password.decorator';
 
 export class RegisterDto {
   @ApiProperty({ example: 'owner@company.com' })

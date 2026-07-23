@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { RequestWithFullContext } from '../types/request-with-logging.type';
+import { RequestWithFullContext } from '@common/logging/types/request-with-logging.type';
 import { getRequestLogContext } from './request-log-context.util';
 
 describe('getRequestLogContext', () => {

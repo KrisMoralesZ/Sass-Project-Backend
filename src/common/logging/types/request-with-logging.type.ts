@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import type { RequestWithTenantContext } from '../../tenant/types/request-with-tenant-context.type';
+import type { RequestWithTenantContext } from '@common/tenant/types/request-with-tenant-context.type';
 
 export type RequestWithLogging = Request & {
   requestId: string;

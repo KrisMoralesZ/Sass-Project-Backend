@@ -7,9 +7,9 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { parseExceptionResponse } from '../errors/parse-exception-response.util';
-import { ApiErrorResponse } from '../interfaces/api-response.interface';
-import { getRequestLogContext } from '../logging/utils/request-log-context.util';
+import { parseExceptionResponse } from '@common/errors/parse-exception-response.util';
+import { ApiErrorResponse } from '@common/interfaces/api-response.interface';
+import { getRequestLogContext } from '@common/logging/utils/request-log-context.util';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {

@@ -1,7 +1,7 @@
 import { NextFunction, Response } from 'express';
-import { REQUEST_ID_HEADER } from '../constants/logging.constants';
-import { RequestIdMiddleware } from './request-id.middleware';
-import { RequestWithLogging } from '../types/request-with-logging.type';
+import { REQUEST_ID_HEADER } from '@common/logging/constants/logging.constants';
+import { RequestIdMiddleware } from '@common/logging/middleware/request-id.middleware';
+import { RequestWithLogging } from '@common/logging/types/request-with-logging.type';
 
 describe('RequestIdMiddleware', () => {
   let middleware: RequestIdMiddleware;

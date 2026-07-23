@@ -1,10 +1,10 @@
 import { Request } from 'express';
-import type { RequestWithTenantContext } from '../../tenant/types/request-with-tenant-context.type';
-import { RequestLogContext } from '../interfaces/request-log-context.interface';
+import type { RequestWithTenantContext } from '@common/tenant/types/request-with-tenant-context.type';
+import { RequestLogContext } from '@common/logging/interfaces/request-log-context.interface';
 import {
   isRequestWithLogging,
   RequestWithFullContext,
-} from '../types/request-with-logging.type';
+} from '@common/logging/types/request-with-logging.type';
 
 export function getRequestLogContext(request: Request): RequestLogContext {
   const contextualRequest = request as RequestWithFullContext;
