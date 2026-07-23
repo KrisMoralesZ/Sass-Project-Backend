@@ -1,7 +1,6 @@
 import { Global, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { OrganizationMember } from '@organizations/entities/organization-member.entity';
+import { OrganizationsModule } from '@organizations/organizations.module';
 import { TenantGuard } from './guards/tenant.guard';
 import { TenantContextMiddleware } from './middleware/tenant-context.middleware';
 import { TenantContextController } from './tenant-context.controller';
@@ -11,7 +10,7 @@ import { TenantMembershipValidator } from './tenant-membership.validator';
 
 @Global()
 @Module({
-  imports: [TypeOrmModule.forFeature([OrganizationMember])],
+  imports: [OrganizationsModule],
   controllers: [TenantContextController],
   providers: [
     TenantContextResolver,

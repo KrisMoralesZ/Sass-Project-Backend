@@ -18,11 +18,11 @@ import { Organization } from './entities/organization.entity';
 import { OrganizationPlan } from './enums/organization-plan.enum';
 import { OrganizationRole } from './enums/organization-role.enum';
 import { OrganizationResponse } from './interfaces/organization-response.interface';
-import {
-  DEFAULT_ORGANIZATION_SETTINGS,
-  OrganizationSettings,
-} from './interfaces/organization-settings.interface';
 import { OrganizationMembershipService } from './services/organization-membership.service';
+import {
+  mergeOrganizationSettings,
+  normalizeOrganizationSettings,
+} from './utils/organization-settings.util';
 import {
   appendOrganizationSlugSuffix,
   normalizeOrganizationSlug,
@@ -61,7 +61,7 @@ export class OrganizationsService {
           name: dto.name.trim(),
           slug,
           plan: dto.plan ?? OrganizationPlan.FREE,
-          settings: { ...DEFAULT_ORGANIZATION_SETTINGS },
+          settings: normalizeOrganizationSettings({}),
         });
 
         const persistedOrganization =
@@ -84,7 +84,7 @@ export class OrganizationsService {
 
   async findAll(query: ListOrganizationsQueryDto, userId: string) {
     const organizationIds =
-      await this.organizationMembershipService.getOrganizationIdsForUser(
+      await this.organizationMembershipService.getActiveOrganizationIdsForUser(
         userId,
       );
 
@@ -152,7 +152,7 @@ export class OrganizationsService {
     }
 
     if (dto.settings !== undefined) {
-      organization.settings = this.mergeSettings(
+      organization.settings = mergeOrganizationSettings(
         organization.settings,
         dto.settings,
       );
@@ -175,7 +175,7 @@ export class OrganizationsService {
     organizationId: string,
     userId: string,
   ): Promise<void> {
-    const isMember = await this.organizationMembershipService.isMember(
+    const isMember = await this.organizationMembershipService.isActiveMember(
       userId,
       organizationId,
     );
@@ -250,33 +250,13 @@ export class OrganizationsService {
     }
   }
 
-  private mergeSettings(
-    currentSettings: Record<string, unknown>,
-    patch: OrganizationSettings,
-  ): Record<string, unknown> {
-    const current = currentSettings as OrganizationSettings;
-
-    return {
-      ...current,
-      ...patch,
-      branding: {
-        ...current.branding,
-        ...patch.branding,
-      },
-      featureFlags: {
-        ...current.featureFlags,
-        ...patch.featureFlags,
-      },
-    };
-  }
-
   private toResponse(organization: Organization): OrganizationResponse {
     return {
       id: organization.id,
       name: organization.name,
       slug: organization.slug,
       plan: organization.plan,
-      settings: organization.settings,
+      settings: normalizeOrganizationSettings(organization.settings),
       createdAt: organization.createdAt,
       updatedAt: organization.updatedAt,
     };

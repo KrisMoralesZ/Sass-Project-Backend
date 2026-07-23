@@ -1,6 +1,7 @@
 import { Column, Entity, Index, OneToMany } from 'typeorm';
 import { BaseEntity } from '@database/entities/base.entity';
 import { OrganizationPlan } from '@organizations/enums/organization-plan.enum';
+import type { OrganizationSettings } from '@organizations/interfaces/organization-settings.interface';
 import { OrganizationMember } from './organization-member.entity';
 
 /**
@@ -28,7 +29,7 @@ export class Organization extends BaseEntity {
   plan!: OrganizationPlan;
 
   @Column({ type: 'jsonb', default: {} })
-  settings!: Record<string, unknown>;
+  settings!: OrganizationSettings;
 
   @OneToMany(() => OrganizationMember, (member) => member.organization)
   members!: OrganizationMember[];
