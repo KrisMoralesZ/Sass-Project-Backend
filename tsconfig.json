@@ -20,7 +20,8 @@
       "@config/*": ["src/config/*"],
       "@database/*": ["src/database/*"],
       "@health/*": ["src/modules/health/*"],
-      "@authentication/*": ["src/modules/authentication/*"]
+      "@authentication/*": ["src/modules/authentication/*"],
+      "@organizations/*": ["src/modules/organizations/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

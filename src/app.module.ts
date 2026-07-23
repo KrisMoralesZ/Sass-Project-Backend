@@ -6,6 +6,7 @@ import { TenantModule } from '@common/tenant/tenant.module';
 import { AppConfigModule } from '@config/app-config.module';
 import { DatabaseModule } from '@database/database.module';
 import { HealthModule } from '@health/health.module';
+import { OrganizationsModule } from '@organizations/organizations.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { HealthModule } from '@health/health.module';
     TenantModule,
     HealthModule,
     AuthenticationModule,
+    OrganizationsModule,
   ],
 })
 export class AppModule {}

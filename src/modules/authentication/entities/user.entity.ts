@@ -1,4 +1,5 @@
-import { Column, Entity, Index } from 'typeorm';
+import { OrganizationMember } from '@organizations/entities/organization-member.entity';
+import { Column, Entity, Index, OneToMany } from 'typeorm';
 import { BaseEntity } from '@database/entities/base.entity';
 
 @Entity('users')
@@ -18,4 +19,7 @@ export class User extends BaseEntity {
 
   @Column({ type: 'timestamptz', nullable: true })
   lockedUntil!: Date | null;
+
+  @OneToMany(() => OrganizationMember, (membership) => membership.user)
+  memberships!: OrganizationMember[];
 }
