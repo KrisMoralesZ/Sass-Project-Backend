@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
+import { DataSource, ILike, In, Repository } from 'typeorm';
 import { SortOrder } from '@common/enums/sort-order.enum';
 import { AppException } from '@common/errors';
 import {
@@ -13,13 +13,16 @@ import {
   ORGANIZATION_SORT_FIELDS,
 } from './dto/list-organizations-query.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
+import { OrganizationMember } from './entities/organization-member.entity';
 import { Organization } from './entities/organization.entity';
 import { OrganizationPlan } from './enums/organization-plan.enum';
+import { OrganizationRole } from './enums/organization-role.enum';
 import { OrganizationResponse } from './interfaces/organization-response.interface';
 import {
   DEFAULT_ORGANIZATION_SETTINGS,
   OrganizationSettings,
 } from './interfaces/organization-settings.interface';
+import { OrganizationMembershipService } from './services/organization-membership.service';
 import {
   appendOrganizationSlugSuffix,
   normalizeOrganizationSlug,
@@ -33,14 +36,14 @@ export class OrganizationsService {
   constructor(
     @InjectRepository(Organization)
     private readonly organizationsRepository: Repository<Organization>,
+    private readonly organizationMembershipService: OrganizationMembershipService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(
     dto: CreateOrganizationDto,
-    _userId: string,
+    userId: string,
   ): Promise<OrganizationResponse> {
-    void _userId;
-
     const baseSlug = dto.slug
       ? normalizeOrganizationSlug(dto.slug)
       : slugifyOrganizationName(dto.name);
@@ -49,28 +52,52 @@ export class OrganizationsService {
       requireExactMatch: Boolean(dto.slug),
     });
 
-    const organization = this.organizationsRepository.create({
-      name: dto.name.trim(),
-      slug,
-      plan: dto.plan ?? OrganizationPlan.FREE,
-      settings: { ...DEFAULT_ORGANIZATION_SETTINGS },
-    });
+    const savedOrganization = await this.dataSource.transaction(
+      async (manager) => {
+        const organizationsRepository = manager.getRepository(Organization);
+        const membersRepository = manager.getRepository(OrganizationMember);
 
-    const savedOrganization =
-      await this.organizationsRepository.save(organization);
+        const organization = organizationsRepository.create({
+          name: dto.name.trim(),
+          slug,
+          plan: dto.plan ?? OrganizationPlan.FREE,
+          settings: { ...DEFAULT_ORGANIZATION_SETTINGS },
+        });
+
+        const persistedOrganization =
+          await organizationsRepository.save(organization);
+
+        await membersRepository.save(
+          membersRepository.create({
+            organizationId: persistedOrganization.id,
+            userId,
+            role: OrganizationRole.OWNER,
+          }),
+        );
+
+        return persistedOrganization;
+      },
+    );
 
     return this.toResponse(savedOrganization);
   }
 
-  async findAll(query: ListOrganizationsQueryDto, _userId: string) {
-    void _userId;
+  async findAll(query: ListOrganizationsQueryDto, userId: string) {
+    const organizationIds =
+      await this.organizationMembershipService.getOrganizationIdsForUser(
+        userId,
+      );
+
+    if (organizationIds.length === 0) {
+      return createPaginatedResult([], 0, query);
+    }
 
     const findOptions = buildFindManyOptions(query, ORGANIZATION_SORT_FIELDS, {
       sortBy: 'createdAt',
       sortOrder: SortOrder.DESC,
     });
 
-    const where = query.search
+    const searchFilter = query.search
       ? [
           { name: ILike(`%${query.search}%`) },
           { slug: ILike(`%${query.search}%`) },
@@ -79,7 +106,12 @@ export class OrganizationsService {
 
     const [items, total] = await this.organizationsRepository.findAndCount({
       ...findOptions,
-      where,
+      where: searchFilter
+        ? searchFilter.map((filter) => ({
+            ...filter,
+            id: In(organizationIds),
+          }))
+        : { id: In(organizationIds) },
     });
 
     return createPaginatedResult(
@@ -89,8 +121,8 @@ export class OrganizationsService {
     );
   }
 
-  async findOne(id: string, _userId: string): Promise<OrganizationResponse> {
-    void _userId;
+  async findOne(id: string, userId: string): Promise<OrganizationResponse> {
+    await this.assertUserCanAccessOrganization(id, userId);
 
     const organization = await this.findOrganizationById(id);
     return this.toResponse(organization);
@@ -99,9 +131,9 @@ export class OrganizationsService {
   async update(
     id: string,
     dto: UpdateOrganizationDto,
-    _userId: string,
+    userId: string,
   ): Promise<OrganizationResponse> {
-    void _userId;
+    await this.assertUserCanAccessOrganization(id, userId);
 
     const organization = await this.findOrganizationById(id);
 
@@ -132,11 +164,25 @@ export class OrganizationsService {
     return this.toResponse(savedOrganization);
   }
 
-  async remove(id: string, _userId: string): Promise<void> {
-    void _userId;
+  async remove(id: string, userId: string): Promise<void> {
+    await this.assertUserCanAccessOrganization(id, userId);
 
     const organization = await this.findOrganizationById(id);
     await this.organizationsRepository.softRemove(organization);
+  }
+
+  private async assertUserCanAccessOrganization(
+    organizationId: string,
+    userId: string,
+  ): Promise<void> {
+    const isMember = await this.organizationMembershipService.isMember(
+      userId,
+      organizationId,
+    );
+
+    if (!isMember) {
+      throw AppException.notFound('Organization not found');
+    }
   }
 
   private async findOrganizationById(id: string): Promise<Organization> {

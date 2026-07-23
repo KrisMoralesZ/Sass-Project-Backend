@@ -1,6 +1,7 @@
-import { Column, Entity, Index } from 'typeorm';
+import { Column, Entity, Index, OneToMany } from 'typeorm';
 import { BaseEntity } from '@database/entities/base.entity';
 import { OrganizationPlan } from '@organizations/enums/organization-plan.enum';
+import { OrganizationMember } from './organization-member.entity';
 
 /**
  * Root tenant record. Other modules reference this entity via `organizationId`.
@@ -28,4 +29,7 @@ export class Organization extends BaseEntity {
 
   @Column({ type: 'jsonb', default: {} })
   settings!: Record<string, unknown>;
+
+  @OneToMany(() => OrganizationMember, (member) => member.organization)
+  members!: OrganizationMember[];
 }

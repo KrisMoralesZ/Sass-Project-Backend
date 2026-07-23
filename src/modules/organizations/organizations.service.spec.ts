@@ -1,10 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { ErrorCode } from '@common/errors/error-code.enum';
+import { OrganizationMember } from './entities/organization-member.entity';
 import { Organization } from './entities/organization.entity';
 import { OrganizationPlan } from './enums/organization-plan.enum';
+import { OrganizationRole } from './enums/organization-role.enum';
 import { OrganizationsService } from './organizations.service';
+import { OrganizationMembershipService } from './services/organization-membership.service';
 
 describe('OrganizationsService', () => {
   let service: OrganizationsService;
@@ -12,6 +15,15 @@ describe('OrganizationsService', () => {
     Pick<
       Repository<Organization>,
       'create' | 'save' | 'findOne' | 'findAndCount' | 'softRemove'
+    >
+  >;
+  let membersRepository: jest.Mocked<
+    Pick<Repository<OrganizationMember>, 'create' | 'save'>
+  >;
+  let organizationMembershipService: jest.Mocked<
+    Pick<
+      OrganizationMembershipService,
+      'getOrganizationIdsForUser' | 'isMember'
     >
   >;
 
@@ -27,17 +39,46 @@ describe('OrganizationsService', () => {
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     deletedAt: null,
+    members: [],
   };
 
   beforeEach(async () => {
     organizationsRepository = {
       create: jest.fn((data) => data as Organization),
       save: jest.fn((entity) =>
-        Promise.resolve({ ...organization, ...entity }),
+        Promise.resolve({ ...organization, ...entity, id: organization.id }),
       ),
       findOne: jest.fn(),
       findAndCount: jest.fn(),
       softRemove: jest.fn().mockResolvedValue(undefined),
+    };
+
+    membersRepository = {
+      create: jest.fn((data) => data as OrganizationMember),
+      save: jest.fn((entity) => Promise.resolve(entity as OrganizationMember)),
+    };
+
+    organizationMembershipService = {
+      getOrganizationIdsForUser: jest.fn().mockResolvedValue(['org-1']),
+      isMember: jest.fn().mockResolvedValue(true),
+    };
+
+    const dataSource = {
+      transaction: jest.fn(async (callback) =>
+        callback({
+          getRepository: (entity: unknown) => {
+            if (entity === Organization) {
+              return organizationsRepository;
+            }
+
+            if (entity === OrganizationMember) {
+              return membersRepository;
+            }
+
+            throw new Error('Unexpected repository requested in transaction');
+          },
+        }),
+      ),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -47,13 +88,21 @@ describe('OrganizationsService', () => {
           provide: getRepositoryToken(Organization),
           useValue: organizationsRepository,
         },
+        {
+          provide: OrganizationMembershipService,
+          useValue: organizationMembershipService,
+        },
+        {
+          provide: DataSource,
+          useValue: dataSource,
+        },
       ],
     }).compile();
 
     service = module.get(OrganizationsService);
   });
 
-  it('creates an organization with a generated slug', async () => {
+  it('creates an organization and owner membership for the creator', async () => {
     organizationsRepository.findOne.mockResolvedValue(null);
 
     const result = await service.create({ name: 'Acme Corporation' }, 'user-1');
@@ -65,6 +114,11 @@ describe('OrganizationsService', () => {
         plan: OrganizationPlan.FREE,
       }),
     );
+    expect(membersRepository.create).toHaveBeenCalledWith({
+      organizationId: 'org-1',
+      userId: 'user-1',
+      role: OrganizationRole.OWNER,
+    });
     expect(result.slug).toBe('acme-corporation');
   });
 
@@ -94,16 +148,29 @@ describe('OrganizationsService', () => {
     });
   });
 
-  it('returns paginated organizations', async () => {
+  it('returns only organizations the user belongs to', async () => {
     organizationsRepository.findAndCount.mockResolvedValue([[organization], 1]);
 
     const result = await service.findAll({}, 'user-1');
 
+    expect(
+      organizationMembershipService.getOrganizationIdsForUser,
+    ).toHaveBeenCalledWith('user-1');
     expect(result.items).toHaveLength(1);
     expect(result.pagination.total).toBe(1);
   });
 
-  it('updates an organization', async () => {
+  it('returns an empty list when the user has no memberships', async () => {
+    organizationMembershipService.getOrganizationIdsForUser.mockResolvedValue([]);
+
+    const result = await service.findAll({}, 'user-1');
+
+    expect(result.items).toHaveLength(0);
+    expect(result.pagination.total).toBe(0);
+    expect(organizationsRepository.findAndCount).not.toHaveBeenCalled();
+  });
+
+  it('updates an organization for a member', async () => {
     organizationsRepository.findOne
       .mockResolvedValueOnce(organization)
       .mockResolvedValueOnce(null);
@@ -114,6 +181,10 @@ describe('OrganizationsService', () => {
       'user-1',
     );
 
+    expect(organizationMembershipService.isMember).toHaveBeenCalledWith(
+      'user-1',
+      'org-1',
+    );
     expect(result.name).toBe('Acme Corp Updated');
   });
 
@@ -148,7 +219,16 @@ describe('OrganizationsService', () => {
     });
   });
 
-  it('archives an organization', async () => {
+  it('returns not found when accessing an organization without membership', async () => {
+    organizationMembershipService.isMember.mockResolvedValue(false);
+
+    await expect(service.findOne('org-1', 'user-1')).rejects.toMatchObject({
+      code: ErrorCode.RESOURCE_NOT_FOUND,
+      message: 'Organization not found',
+    });
+  });
+
+  it('archives an organization for a member', async () => {
     organizationsRepository.findOne.mockResolvedValue(organization);
 
     await service.remove('org-1', 'user-1');

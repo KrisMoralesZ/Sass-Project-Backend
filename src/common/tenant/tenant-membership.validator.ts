@@ -1,9 +1,17 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { OrganizationMember } from '@organizations/entities/organization-member.entity';
 import { AppException, ErrorCode } from '@common/errors';
 import { AuthenticatedUser } from './interfaces/tenant-context.interface';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class TenantMembershipValidator {
+  constructor(
+    @InjectRepository(OrganizationMember)
+    private readonly membersRepository: Repository<OrganizationMember>,
+  ) {}
+
   async assertMembership(
     user: AuthenticatedUser | undefined,
     organizationId: string,
@@ -21,10 +29,14 @@ export class TenantMembershipValidator {
     }
   }
 
-  protected isMember(userId: string, organizationId: string): Promise<boolean> {
-    void userId;
-    void organizationId;
-    // Organizations module will replace this with a real membership lookup.
-    return Promise.resolve(true);
+  protected async isMember(
+    userId: string,
+    organizationId: string,
+  ): Promise<boolean> {
+    const membership = await this.membersRepository.findOne({
+      where: { userId, organizationId },
+    });
+
+    return membership !== null;
   }
 }
