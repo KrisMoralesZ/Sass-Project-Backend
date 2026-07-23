@@ -11,8 +11,8 @@
     "^@app/(.*)$": "<rootDir>/../src/$1",
     "^@common/(.*)$": "<rootDir>/../src/common/$1",
     "^@config/(.*)$": "<rootDir>/../src/config/$1",
-    "^@authentication/(.*)$": "<rootDir>/../src/modules/authentication/$1",
     "^@database/(.*)$": "<rootDir>/../src/database/$1",
-    "^@health/(.*)$": "<rootDir>/../src/modules/health/$1"
+    "^@health/(.*)$": "<rootDir>/../src/modules/health/$1",
+    "^@authentication/(.*)$": "<rootDir>/../src/modules/authentication/$1"
   }
 }
