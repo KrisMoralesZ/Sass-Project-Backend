@@ -5,6 +5,7 @@ import { join } from 'path';
 register({
   baseUrl: join(__dirname),
   paths: {
+    '@app/*': ['*'],
     '@common/*': ['common/*'],
     '@config/*': ['config/*'],
     '@authentication/*': ['authentication/*'],

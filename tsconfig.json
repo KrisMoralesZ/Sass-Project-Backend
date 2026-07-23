@@ -15,11 +15,12 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
+      "@app/*": ["src/*"],
       "@common/*": ["src/common/*"],
       "@config/*": ["src/config/*"],
-      "@authentication/*": ["src/authentication/*"],
       "@database/*": ["src/database/*"],
-      "@health/*": ["src/modules/health/*"]
+      "@health/*": ["src/modules/health/*"],
+      "@authentication/*": ["src/authentication/*"]
     },
     "incremental": true,
     "skipLibCheck": true,
