@@ -1,5 +1,5 @@
-import { AppException, ErrorCode } from '../errors';
-import { SortOrder } from '../enums/sort-order.enum';
+import { AppException, ErrorCode } from '@common/errors';
+import { SortOrder } from '@common/enums/sort-order.enum';
 import {
   buildFindManyOptions,
   buildPaginationMeta,

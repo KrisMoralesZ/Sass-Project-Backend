@@ -8,11 +8,11 @@ import {
 import { Request, Response } from 'express';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { RequestCompletionLogContext } from '../interfaces/request-log-context.interface';
+import { RequestCompletionLogContext } from '@common/logging/interfaces/request-log-context.interface';
 import {
   formatRequestLogContext,
   getRequestLogContext,
-} from '../utils/request-log-context.util';
+} from '@common/logging/utils/request-log-context.util';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {

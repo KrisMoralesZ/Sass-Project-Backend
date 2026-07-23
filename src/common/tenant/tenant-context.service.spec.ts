@@ -1,4 +1,4 @@
-import { AppException, ErrorCode } from '../errors';
+import { AppException, ErrorCode } from '@common/errors';
 import { TenantContextService } from './tenant-context.service';
 import { RequestWithTenantContext } from './types/request-with-tenant-context.type';
 
