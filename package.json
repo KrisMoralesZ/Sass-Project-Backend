@@ -87,7 +87,11 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/$1"
+      "^@common/(.*)$": "<rootDir>/common/$1",
+      "^@config/(.*)$": "<rootDir>/config/$1",
+      "^@authentication/(.*)$": "<rootDir>/authentication/$1",
+      "^@database/(.*)$": "<rootDir>/database/$1",
+      "^@health/(.*)$": "<rootDir>/modules/health/$1"
     }
   }
 }

@@ -15,7 +15,11 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"]
+      "@common/*": ["src/common/*"],
+      "@config/*": ["src/config/*"],
+      "@authentication/*": ["src/authentication/*"],
+      "@database/*": ["src/database/*"],
+      "@health/*": ["src/modules/health/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

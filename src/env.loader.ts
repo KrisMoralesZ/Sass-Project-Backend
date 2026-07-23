@@ -4,7 +4,13 @@ import { join } from 'path';
 
 register({
   baseUrl: join(__dirname),
-  paths: { '@/*': ['*'] },
+  paths: {
+    '@common/*': ['common/*'],
+    '@config/*': ['config/*'],
+    '@authentication/*': ['authentication/*'],
+    '@database/*': ['database/*'],
+    '@health/*': ['modules/health/*'],
+  },
 });
 
 config({ path: join(process.cwd(), '.env') });
