@@ -1,11 +1,21 @@
 import {
   DEFAULT_ORGANIZATION_BRANDING,
+  DEFAULT_ORGANIZATION_FEATURE_FLAGS,
   DEFAULT_ORGANIZATION_LOCALE,
-  DEFAULT_ORGANIZATION_SETTINGS,
   DEFAULT_ORGANIZATION_TIMEZONE,
   OrganizationBrandingSettings,
+  OrganizationFeatureFlags,
   OrganizationSettings,
 } from '../interfaces/organization-settings.interface';
+
+export function normalizeOrganizationFeatureFlags(
+  featureFlags: Partial<OrganizationFeatureFlags> | null | undefined,
+): OrganizationFeatureFlags {
+  return {
+    ...DEFAULT_ORGANIZATION_FEATURE_FLAGS,
+    ...featureFlags,
+  };
+}
 
 export function normalizeOrganizationSettings(
   settings: Record<string, unknown> | OrganizationSettings | null | undefined,
@@ -25,17 +35,15 @@ export function normalizeOrganizationSettings(
         branding.accentColor ?? DEFAULT_ORGANIZATION_BRANDING.accentColor,
       appName: branding.appName ?? DEFAULT_ORGANIZATION_BRANDING.appName,
     },
-    featureFlags: {
-      ...DEFAULT_ORGANIZATION_SETTINGS.featureFlags,
-      ...current.featureFlags,
-    },
+    featureFlags: normalizeOrganizationFeatureFlags(current.featureFlags),
   };
 }
 
 export function mergeOrganizationSettings(
   currentSettings: Record<string, unknown> | OrganizationSettings,
-  patch: Partial<Omit<OrganizationSettings, 'branding'>> & {
+  patch: Partial<Omit<OrganizationSettings, 'branding' | 'featureFlags'>> & {
     branding?: Partial<OrganizationBrandingSettings>;
+    featureFlags?: Partial<OrganizationFeatureFlags>;
   },
 ): OrganizationSettings {
   const current = normalizeOrganizationSettings(currentSettings);
@@ -47,9 +55,9 @@ export function mergeOrganizationSettings(
       ...current.branding,
       ...patch.branding,
     },
-    featureFlags: {
+    featureFlags: normalizeOrganizationFeatureFlags({
       ...current.featureFlags,
       ...patch.featureFlags,
-    },
+    }),
   });
 }

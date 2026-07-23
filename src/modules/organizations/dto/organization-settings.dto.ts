@@ -1,13 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
-  IsObject,
   IsOptional,
   IsString,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
 import { OrganizationBrandingSettingsDto } from './organization-branding-settings.dto';
+import { OrganizationFeatureFlagsDto } from './organization-feature-flags.dto';
 
 export class OrganizationSettingsDto {
   @ApiPropertyOptional({
@@ -37,10 +37,11 @@ export class OrganizationSettingsDto {
 
 export class OrganizationSettingsPatchDto extends OrganizationSettingsDto {
   @ApiPropertyOptional({
-    example: { betaBoards: true },
+    type: OrganizationFeatureFlagsDto,
     description: 'Organization feature flag placeholders.',
   })
   @IsOptional()
-  @IsObject()
-  featureFlags?: Record<string, boolean>;
+  @ValidateNested()
+  @Type(() => OrganizationFeatureFlagsDto)
+  featureFlags?: OrganizationFeatureFlagsDto;
 }

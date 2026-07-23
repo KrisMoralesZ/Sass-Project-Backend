@@ -1,3 +1,15 @@
+import {
+  DEFAULT_ORGANIZATION_FEATURE_FLAGS,
+  OrganizationFeatureFlags,
+} from './organization-feature-flags.interface';
+
+export type { OrganizationFeatureFlags };
+export {
+  DEFAULT_ORGANIZATION_FEATURE_FLAGS,
+  OrganizationFeatureFlag,
+  ORGANIZATION_FEATURE_FLAG_KEYS,
+} from './organization-feature-flags.interface';
+
 export const DEFAULT_ORGANIZATION_TIMEZONE = 'UTC';
 export const DEFAULT_ORGANIZATION_LOCALE = 'en';
 
@@ -12,7 +24,7 @@ export interface OrganizationSettings {
   timezone: string;
   locale: string;
   branding: OrganizationBrandingSettings;
-  featureFlags: Record<string, boolean>;
+  featureFlags: OrganizationFeatureFlags;
 }
 
 export const DEFAULT_ORGANIZATION_BRANDING: OrganizationBrandingSettings = {
@@ -26,5 +38,5 @@ export const DEFAULT_ORGANIZATION_SETTINGS: OrganizationSettings = {
   timezone: DEFAULT_ORGANIZATION_TIMEZONE,
   locale: DEFAULT_ORGANIZATION_LOCALE,
   branding: { ...DEFAULT_ORGANIZATION_BRANDING },
-  featureFlags: {},
+  featureFlags: { ...DEFAULT_ORGANIZATION_FEATURE_FLAGS },
 };

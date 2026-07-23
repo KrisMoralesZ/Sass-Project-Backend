@@ -9,6 +9,7 @@ import { OrganizationRole } from './enums/organization-role.enum';
 import { OrganizationsService } from './organizations.service';
 import { OrganizationMembershipService } from './services/organization-membership.service';
 import { DEFAULT_ORGANIZATION_SETTINGS } from './interfaces/organization-settings.interface';
+import { OrganizationFeatureFlag } from './interfaces/organization-feature-flags.interface';
 
 describe('OrganizationsService', () => {
   let service: OrganizationsService;
@@ -44,7 +45,7 @@ describe('OrganizationsService', () => {
         accentColor: null,
         appName: null,
       },
-      featureFlags: {},
+      featureFlags: DEFAULT_ORGANIZATION_SETTINGS.featureFlags,
     },
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -266,7 +267,7 @@ describe('OrganizationsService', () => {
           accentColor: null,
           appName: null,
         },
-        featureFlags: {},
+        featureFlags: DEFAULT_ORGANIZATION_SETTINGS.featureFlags,
       },
     });
 
@@ -305,12 +306,36 @@ describe('OrganizationsService', () => {
             accentColor: null,
             appName: null,
           },
-          featureFlags: {},
+          featureFlags: DEFAULT_ORGANIZATION_SETTINGS.featureFlags,
         },
       }),
     );
     expect(result.settings.branding.primaryColor).toBe('#2563eb');
     expect(result.settings.locale).toBe('en-US');
+  });
+
+  it('merges feature flag updates for an organization', async () => {
+    organizationsRepository.findOne.mockResolvedValueOnce({
+      ...organization,
+      settings: DEFAULT_ORGANIZATION_SETTINGS,
+    });
+
+    const result = await service.update(
+      'org-1',
+      {
+        settings: {
+          featureFlags: {
+            [OrganizationFeatureFlag.BETA_BOARDS]: true,
+          },
+        },
+      },
+      'user-1',
+    );
+
+    expect(result.settings.featureFlags).toEqual({
+      ...DEFAULT_ORGANIZATION_SETTINGS.featureFlags,
+      [OrganizationFeatureFlag.BETA_BOARDS]: true,
+    });
   });
 
   it('archives an organization for a member', async () => {

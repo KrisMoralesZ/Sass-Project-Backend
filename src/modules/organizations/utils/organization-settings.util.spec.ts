@@ -1,16 +1,19 @@
 import {
   DEFAULT_ORGANIZATION_BRANDING,
+  DEFAULT_ORGANIZATION_FEATURE_FLAGS,
   DEFAULT_ORGANIZATION_LOCALE,
   DEFAULT_ORGANIZATION_SETTINGS,
   DEFAULT_ORGANIZATION_TIMEZONE,
 } from '../interfaces/organization-settings.interface';
+import { OrganizationFeatureFlag } from '../interfaces/organization-feature-flags.interface';
 import {
   mergeOrganizationSettings,
+  normalizeOrganizationFeatureFlags,
   normalizeOrganizationSettings,
 } from './organization-settings.util';
 
 describe('organization-settings.util', () => {
-  it('returns default timezone, locale, and branding placeholders', () => {
+  it('returns default timezone, locale, branding, and feature flag placeholders', () => {
     expect(normalizeOrganizationSettings({})).toEqual(
       DEFAULT_ORGANIZATION_SETTINGS,
     );
@@ -18,7 +21,7 @@ describe('organization-settings.util', () => {
       timezone: DEFAULT_ORGANIZATION_TIMEZONE,
       locale: DEFAULT_ORGANIZATION_LOCALE,
       branding: DEFAULT_ORGANIZATION_BRANDING,
-      featureFlags: {},
+      featureFlags: DEFAULT_ORGANIZATION_FEATURE_FLAGS,
     });
   });
 
@@ -40,7 +43,18 @@ describe('organization-settings.util', () => {
         accentColor: null,
         appName: null,
       },
-      featureFlags: {},
+      featureFlags: DEFAULT_ORGANIZATION_FEATURE_FLAGS,
+    });
+  });
+
+  it('normalizes partial feature flag values against placeholder defaults', () => {
+    expect(
+      normalizeOrganizationFeatureFlags({
+        [OrganizationFeatureFlag.BETA_BOARDS]: true,
+      }),
+    ).toEqual({
+      ...DEFAULT_ORGANIZATION_FEATURE_FLAGS,
+      [OrganizationFeatureFlag.BETA_BOARDS]: true,
     });
   });
 
@@ -56,7 +70,10 @@ describe('organization-settings.util', () => {
             accentColor: null,
             appName: 'Acme',
           },
-          featureFlags: { betaBoards: true },
+          featureFlags: {
+            ...DEFAULT_ORGANIZATION_FEATURE_FLAGS,
+            [OrganizationFeatureFlag.BETA_BOARDS]: true,
+          },
         },
         {
           locale: 'en-US',
@@ -74,7 +91,23 @@ describe('organization-settings.util', () => {
         accentColor: null,
         appName: 'Acme',
       },
-      featureFlags: { betaBoards: true },
+      featureFlags: {
+        ...DEFAULT_ORGANIZATION_FEATURE_FLAGS,
+        [OrganizationFeatureFlag.BETA_BOARDS]: true,
+      },
+    });
+  });
+
+  it('merges feature flag updates without resetting untouched flags', () => {
+    expect(
+      mergeOrganizationSettings(DEFAULT_ORGANIZATION_SETTINGS, {
+        featureFlags: {
+          [OrganizationFeatureFlag.MEMBER_INVITES]: true,
+        },
+      }).featureFlags,
+    ).toEqual({
+      ...DEFAULT_ORGANIZATION_FEATURE_FLAGS,
+      [OrganizationFeatureFlag.MEMBER_INVITES]: true,
     });
   });
 });
