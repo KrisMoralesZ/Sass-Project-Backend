@@ -8,9 +8,9 @@ register({
     '@app/*': ['*'],
     '@common/*': ['common/*'],
     '@config/*': ['config/*'],
-    '@authentication/*': ['authentication/*'],
     '@database/*': ['database/*'],
     '@health/*': ['modules/health/*'],
+    '@authentication/*': ['modules/authentication/*'],
   },
 });
 
