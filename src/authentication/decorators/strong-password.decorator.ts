@@ -6,7 +6,7 @@ import {
   PASSWORD_MIN_LENGTH,
   PASSWORD_PATTERN,
   PASSWORD_VALIDATION_MESSAGE,
-} from '../constants/password.constants';
+} from '@authentication/constants/password.constants';
 
 export function StrongPasswordProperty(options?: { example?: string }) {
   return applyDecorators(
