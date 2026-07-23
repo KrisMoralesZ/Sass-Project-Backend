@@ -17,8 +17,8 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { CurrentUser } from '../../authentication/decorators/current-user.decorator';
-import { OptionalOrganization } from '../../common/tenant';
+import { CurrentUser } from '@authentication/decorators/current-user.decorator';
+import { OptionalOrganization } from '@common/tenant';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { ListOrganizationsQueryDto } from './dto/list-organizations-query.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
