@@ -10,10 +10,6 @@ import { OrganizationMembershipService } from './services/organization-membershi
   imports: [TypeOrmModule.forFeature([Organization, OrganizationMember])],
   controllers: [OrganizationsController],
   providers: [OrganizationsService, OrganizationMembershipService],
-  exports: [
-    OrganizationsService,
-    OrganizationMembershipService,
-    TypeOrmModule,
-  ],
+  exports: [OrganizationsService, OrganizationMembershipService, TypeOrmModule],
 })
 export class OrganizationsModule {}

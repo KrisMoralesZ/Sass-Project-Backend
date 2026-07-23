@@ -235,8 +235,7 @@ export class OrganizationsService {
     });
 
     return (
-      !existingOrganization ||
-      existingOrganization.id === excludeOrganizationId
+      !existingOrganization || existingOrganization.id === excludeOrganizationId
     );
   }
 

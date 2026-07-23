@@ -22,7 +22,7 @@ describe('Organization', () => {
   it('enforces unique slug lookups', () => {
     const indices = getMetadataArgsStorage()
       .indices.filter((index) => index.target === Organization)
-      .flatMap((index) => index.columns ?? []);
+      .flatMap((index) => (Array.isArray(index.columns) ? index.columns : []));
 
     expect(indices).toContain('slug');
   });

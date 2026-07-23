@@ -28,9 +28,7 @@ export function appendOrganizationSlugSuffix(
 ): string {
   const suffixPart = `-${suffix}`;
   const maxBaseLength = ORGANIZATION_SLUG_MAX_LENGTH - suffixPart.length;
-  const trimmedBase = baseSlug
-    .slice(0, maxBaseLength)
-    .replace(/-+$/, '');
+  const trimmedBase = baseSlug.slice(0, maxBaseLength).replace(/-+$/, '');
 
   return `${trimmedBase}${suffixPart}`;
 }

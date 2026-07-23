@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { ErrorCode } from '@common/errors/error-code.enum';
 import { OrganizationMember } from './entities/organization-member.entity';
 import { Organization } from './entities/organization.entity';
@@ -11,15 +11,17 @@ import { OrganizationMembershipService } from './services/organization-membershi
 
 describe('OrganizationsService', () => {
   let service: OrganizationsService;
-  let organizationsRepository: jest.Mocked<
-    Pick<
-      Repository<Organization>,
-      'create' | 'save' | 'findOne' | 'findAndCount' | 'softRemove'
-    >
-  >;
-  let membersRepository: jest.Mocked<
-    Pick<Repository<OrganizationMember>, 'create' | 'save'>
-  >;
+  let organizationsRepository: {
+    create: jest.Mock;
+    save: jest.Mock;
+    findOne: jest.Mock;
+    findAndCount: jest.Mock;
+    softRemove: jest.Mock;
+  };
+  let membersRepository: {
+    create: jest.Mock;
+    save: jest.Mock;
+  };
   let organizationMembershipService: jest.Mocked<
     Pick<
       OrganizationMembershipService,
@@ -63,21 +65,29 @@ describe('OrganizationsService', () => {
       isMember: jest.fn().mockResolvedValue(true),
     };
 
+    const transactionManager = {
+      getRepository: (
+        entity: unknown,
+      ): typeof organizationsRepository | typeof membersRepository => {
+        if (entity === Organization) {
+          return organizationsRepository;
+        }
+
+        if (entity === OrganizationMember) {
+          return membersRepository;
+        }
+
+        throw new Error('Unexpected repository requested in transaction');
+      },
+    };
+
     const dataSource = {
-      transaction: jest.fn(async (callback) =>
-        callback({
-          getRepository: (entity: unknown) => {
-            if (entity === Organization) {
-              return organizationsRepository;
-            }
-
-            if (entity === OrganizationMember) {
-              return membersRepository;
-            }
-
-            throw new Error('Unexpected repository requested in transaction');
-          },
-        }),
+      transaction: jest.fn(
+        (
+          callback: (
+            manager: typeof transactionManager,
+          ) => Promise<Organization>,
+        ) => callback(transactionManager),
       ),
     };
 
@@ -161,7 +171,9 @@ describe('OrganizationsService', () => {
   });
 
   it('returns an empty list when the user has no memberships', async () => {
-    organizationMembershipService.getOrganizationIdsForUser.mockResolvedValue([]);
+    organizationMembershipService.getOrganizationIdsForUser.mockResolvedValue(
+      [],
+    );
 
     const result = await service.findAll({}, 'user-1');
 
