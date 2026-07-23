@@ -8,6 +8,7 @@ import { OrganizationPlan } from './enums/organization-plan.enum';
 import { OrganizationRole } from './enums/organization-role.enum';
 import { OrganizationsService } from './organizations.service';
 import { OrganizationMembershipService } from './services/organization-membership.service';
+import { DEFAULT_ORGANIZATION_SETTINGS } from './interfaces/organization-settings.interface';
 
 describe('OrganizationsService', () => {
   let service: OrganizationsService;
@@ -37,6 +38,13 @@ describe('OrganizationsService', () => {
     settings: {
       timezone: 'UTC',
       locale: 'en',
+      branding: {
+        logoUrl: null,
+        primaryColor: null,
+        accentColor: null,
+        appName: null,
+      },
+      featureFlags: {},
     },
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -130,6 +138,12 @@ describe('OrganizationsService', () => {
       role: OrganizationRole.OWNER,
     });
     expect(result.slug).toBe('acme-corporation');
+    expect(organizationsRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        settings: DEFAULT_ORGANIZATION_SETTINGS,
+      }),
+    );
+    expect(result.settings).toEqual(DEFAULT_ORGANIZATION_SETTINGS);
   });
 
   it('creates an organization with a suffixed slug when the base slug is taken', async () => {
@@ -238,6 +252,65 @@ describe('OrganizationsService', () => {
       code: ErrorCode.RESOURCE_NOT_FOUND,
       message: 'Organization not found',
     });
+  });
+
+  it('normalizes missing branding placeholders in responses', async () => {
+    organizationsRepository.findOne.mockResolvedValue({
+      ...organization,
+      settings: {
+        timezone: 'UTC',
+        locale: 'en',
+        branding: {
+          logoUrl: null,
+          primaryColor: null,
+          accentColor: null,
+          appName: null,
+        },
+        featureFlags: {},
+      },
+    });
+
+    const result = await service.findOne('org-1', 'user-1');
+
+    expect(result.settings).toEqual(DEFAULT_ORGANIZATION_SETTINGS);
+  });
+
+  it('merges organization settings updates while preserving branding placeholders', async () => {
+    organizationsRepository.findOne.mockResolvedValueOnce({
+      ...organization,
+      settings: DEFAULT_ORGANIZATION_SETTINGS,
+    });
+
+    const result = await service.update(
+      'org-1',
+      {
+        settings: {
+          locale: 'en-US',
+          branding: {
+            primaryColor: '#2563eb',
+          },
+        },
+      },
+      'user-1',
+    );
+
+    expect(organizationsRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        settings: {
+          timezone: 'UTC',
+          locale: 'en-US',
+          branding: {
+            logoUrl: null,
+            primaryColor: '#2563eb',
+            accentColor: null,
+            appName: null,
+          },
+          featureFlags: {},
+        },
+      }),
+    );
+    expect(result.settings.branding.primaryColor).toBe('#2563eb');
+    expect(result.settings.locale).toBe('en-US');
   });
 
   it('archives an organization for a member', async () => {

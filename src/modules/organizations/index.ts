@@ -1,5 +1,7 @@
 export * from './dto/create-organization.dto';
 export * from './dto/list-organizations-query.dto';
+export * from './dto/organization-branding-settings.dto';
+export * from './dto/organization-settings.dto';
 export * from './dto/update-organization.dto';
 export * from './entities';
 export * from './enums/organization-plan.enum';
