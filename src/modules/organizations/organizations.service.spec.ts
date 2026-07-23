@@ -27,7 +27,7 @@ describe('OrganizationsService', () => {
   let organizationMembershipService: jest.Mocked<
     Pick<
       OrganizationMembershipService,
-      'getOrganizationIdsForUser' | 'isMember'
+      'getActiveOrganizationIdsForUser' | 'isActiveMember'
     >
   >;
 
@@ -70,8 +70,8 @@ describe('OrganizationsService', () => {
     };
 
     organizationMembershipService = {
-      getOrganizationIdsForUser: jest.fn().mockResolvedValue(['org-1']),
-      isMember: jest.fn().mockResolvedValue(true),
+      getActiveOrganizationIdsForUser: jest.fn().mockResolvedValue(['org-1']),
+      isActiveMember: jest.fn().mockResolvedValue(true),
     };
 
     const transactionManager = {
@@ -179,14 +179,14 @@ describe('OrganizationsService', () => {
     const result = await service.findAll({}, 'user-1');
 
     expect(
-      organizationMembershipService.getOrganizationIdsForUser,
+      organizationMembershipService.getActiveOrganizationIdsForUser,
     ).toHaveBeenCalledWith('user-1');
     expect(result.items).toHaveLength(1);
     expect(result.pagination.total).toBe(1);
   });
 
   it('returns an empty list when the user has no memberships', async () => {
-    organizationMembershipService.getOrganizationIdsForUser.mockResolvedValue(
+    organizationMembershipService.getActiveOrganizationIdsForUser.mockResolvedValue(
       [],
     );
 
@@ -208,7 +208,7 @@ describe('OrganizationsService', () => {
       'user-1',
     );
 
-    expect(organizationMembershipService.isMember).toHaveBeenCalledWith(
+    expect(organizationMembershipService.isActiveMember).toHaveBeenCalledWith(
       'user-1',
       'org-1',
     );
@@ -246,8 +246,8 @@ describe('OrganizationsService', () => {
     });
   });
 
-  it('returns not found when accessing an organization without membership', async () => {
-    organizationMembershipService.isMember.mockResolvedValue(false);
+  it('returns not found when accessing an archived or inaccessible organization', async () => {
+    organizationMembershipService.isActiveMember.mockResolvedValue(false);
 
     await expect(service.findOne('org-1', 'user-1')).rejects.toMatchObject({
       code: ErrorCode.RESOURCE_NOT_FOUND,

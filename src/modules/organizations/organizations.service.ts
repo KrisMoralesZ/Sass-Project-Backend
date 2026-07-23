@@ -84,7 +84,7 @@ export class OrganizationsService {
 
   async findAll(query: ListOrganizationsQueryDto, userId: string) {
     const organizationIds =
-      await this.organizationMembershipService.getOrganizationIdsForUser(
+      await this.organizationMembershipService.getActiveOrganizationIdsForUser(
         userId,
       );
 
@@ -175,7 +175,7 @@ export class OrganizationsService {
     organizationId: string,
     userId: string,
   ): Promise<void> {
-    const isMember = await this.organizationMembershipService.isMember(
+    const isMember = await this.organizationMembershipService.isActiveMember(
       userId,
       organizationId,
     );
