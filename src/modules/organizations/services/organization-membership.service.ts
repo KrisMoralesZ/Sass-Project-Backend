@@ -36,7 +36,7 @@ export class OrganizationMembershipService {
   async getOrganizationIdsForUser(userId: string): Promise<string[]> {
     const memberships = await this.membersRepository.find({
       where: { userId },
-      select: ['organizationId'],
+      select: { organizationId: true },
     });
 
     return memberships.map((membership) => membership.organizationId);
@@ -55,7 +55,7 @@ export class OrganizationMembershipService {
         userId,
         organizationId: In(organizationIds),
       },
-      select: ['organizationId'],
+      select: { organizationId: true },
     });
 
     return memberships.map((membership) => membership.organizationId);
