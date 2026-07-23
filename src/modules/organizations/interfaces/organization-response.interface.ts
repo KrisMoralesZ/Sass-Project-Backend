@@ -1,5 +1,5 @@
-import { OrganizationPlan } from '../enums/organization-plan.enum';
-import { OrganizationSettings } from '../interfaces/organization-settings.interface';
+import { OrganizationPlan } from '@organizations/enums/organization-plan.enum';
+import { OrganizationSettings } from '@organizations/interfaces/organization-settings.interface';
 
 export interface OrganizationResponse {
   id: string;

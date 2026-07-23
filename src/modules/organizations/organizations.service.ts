@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Repository } from 'typeorm';
-import { SortOrder } from '../../common/enums/sort-order.enum';
-import { AppException } from '../../common/errors';
+import { SortOrder } from '@common/enums/sort-order.enum';
+import { AppException } from '@common/errors';
 import {
   buildFindManyOptions,
   createPaginatedResult,
-} from '../../common/utils/pagination.util';
+} from '@common/utils/pagination.util';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import {
   ListOrganizationsQueryDto,

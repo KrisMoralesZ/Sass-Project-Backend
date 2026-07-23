@@ -7,8 +7,8 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { OrganizationPlan } from '../enums/organization-plan.enum';
-import { ORGANIZATION_SLUG_PATTERN } from '../utils/organization-slug.util';
+import { OrganizationPlan } from '@organizations/enums/organization-plan.enum';
+import { ORGANIZATION_SLUG_PATTERN } from '@organizations/utils/organization-slug.util';
 
 export class CreateOrganizationDto {
   @ApiProperty({ example: 'Acme Corporation' })

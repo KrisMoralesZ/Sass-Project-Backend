@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { getMetadataArgsStorage } from 'typeorm';
-import { BaseEntity } from '../../../database/entities/base.entity';
-import { OrganizationPlan } from '../enums/organization-plan.enum';
+import { BaseEntity } from '@database/entities/base.entity';
+import { OrganizationPlan } from '@organizations/enums/organization-plan.enum';
 import { Organization } from './organization.entity';
 
 describe('Organization', () => {

@@ -1,5 +1,5 @@
 import { IsOptional, IsString, MaxLength } from 'class-validator';
-import { ListQueryDto } from '../../../common/dto/list-query.dto';
+import { ListQueryDto } from '@common/dto/list-query.dto';
 
 export class ListOrganizationsQueryDto extends ListQueryDto {
   @IsOptional()

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ErrorCode } from '../../common/errors/error-code.enum';
+import { ErrorCode } from '@common/errors/error-code.enum';
 import { Organization } from './entities/organization.entity';
 import { OrganizationPlan } from './enums/organization-plan.enum';
 import { OrganizationsService } from './organizations.service';

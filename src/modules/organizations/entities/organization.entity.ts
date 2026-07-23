@@ -1,6 +1,6 @@
 import { Column, Entity, Index } from 'typeorm';
-import { BaseEntity } from '../../../database/entities/base.entity';
-import { OrganizationPlan } from '../enums/organization-plan.enum';
+import { BaseEntity } from '@database/entities/base.entity';
+import { OrganizationPlan } from '@organizations/enums/organization-plan.enum';
 
 /**
  * Root tenant record. Other modules reference this entity via `organizationId`.
