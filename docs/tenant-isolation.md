@@ -12,6 +12,10 @@ This document defines how multi-tenancy works in the SaaS backend. **Organizatio
 
 Every request that touches tenant-owned data must carry an active organization context, and every query must filter by that `organizationId`.
 
+### v1 membership model
+
+v1 allows **multiple organization memberships per user** with **one active organization per request**. See [organization-membership-v1.md](./organization-membership-v1.md) for the formal decision and client/backend implications.
+
 ---
 
 ## Request lifecycle
@@ -167,6 +171,7 @@ Unmarked routes require `X-Organization-Id` or a JWT with an `organizationId` cl
 - `Organization` is the tenant root entity
 - Creating an org does not require prior org context
 - Listing/switching orgs is user-scoped, not org-scoped
+- v1 supports multiple memberships per user; clients must send explicit active organization context for workspace routes ([organization-membership-v1.md](./organization-membership-v1.md))
 
 ### Projects → Boards → Issues
 - Strict hierarchy: `Organization → Project → Board → Issue`
@@ -246,3 +251,4 @@ await this.issuesRepository.scopedQueryBuilder('issue')
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-07-13 | Initial tenant isolation rules (Phase 0.2.5) |
+| 1.1 | 2026-07-23 | Documented v1 multi-membership policy (task 2.3.1) |
