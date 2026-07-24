@@ -7,6 +7,10 @@ import { Organization } from './organization.entity';
 /**
  * Join record linking global users to tenant organizations.
  *
+ * v1 policy: users may belong to multiple organizations; each request selects
+ * one active organization via tenant context.
+ *
+ * @see ../../../../docs/organization-membership-v1.md
  * @see ../../../../docs/tenant-isolation.md
  */
 @Entity('organization_members')

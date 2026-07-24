@@ -1,3 +1,4 @@
+export * from './constants/organization-membership-v1.policy';
 export * from './dto/create-organization.dto';
 export * from './dto/list-organizations-query.dto';
 export * from './dto/organization-feature-flags.dto';
