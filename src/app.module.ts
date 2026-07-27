@@ -14,9 +14,10 @@ import { OrganizationsModule } from '@organizations/organizations.module';
     DatabaseModule,
     LoggingModule,
     SecurityModule,
+    // JwtAuthGuard must register before TenantGuard so membership checks see request.user
+    AuthenticationModule,
     TenantModule,
     HealthModule,
-    AuthenticationModule,
     OrganizationsModule,
   ],
 })

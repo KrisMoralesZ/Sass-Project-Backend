@@ -43,13 +43,26 @@ Although users can belong to many organizations, **each request uses exactly one
 - Billing or plan enforcement based on membership count
 - Cross-organization data aggregation in a single request
 
+## Membership validation before context acceptance (task 2.3.2)
+
+Providing an organization id is not enough. Tenant context is accepted only when:
+
+1. The caller is authenticated.
+2. The resolved organization id identifies an **active** (non-archived) organization.
+3. An `OrganizationMember` row links that user to the organization.
+
+Until those checks pass, `request.tenantContext` remains unset and downstream tenant-scoped repositories must not run.
+
 ## Code reference
 
 | Artifact | Purpose |
 |---|---|
 | `src/modules/organizations/constants/organization-membership-v1.policy.ts` | Machine-readable v1 policy constants |
 | `src/modules/organizations/entities/organization-member.entity.ts` | Membership join model |
+| `src/modules/organizations/services/organization-membership.service.ts` | Active membership queries |
 | `src/common/tenant/tenant-context.resolver.ts` | Active organization resolution |
+| `src/common/tenant/tenant-membership.validator.ts` | Membership gate before context acceptance |
+| `src/common/tenant/guards/tenant.guard.ts` | Accepts `tenantContext` only after validation |
 | `docs/tenant-isolation.md` | Tenant boundary and request lifecycle rules |
 
 ## Revision history
@@ -57,3 +70,4 @@ Although users can belong to many organizations, **each request uses exactly one
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-07-23 | v1 decision: multi-membership with explicit per-request active organization |
+| 1.1 | 2026-07-27 | Documented membership validation before tenant context acceptance (task 2.3.2) |

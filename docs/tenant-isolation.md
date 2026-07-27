@@ -24,13 +24,19 @@ v1 allows **multiple organization memberships per user** with **one active organ
 HTTP Request
      │
      ▼
-TenantContextMiddleware        ← resolves organizationId (user → header → JWT)
+TenantContextMiddleware        ← resolves candidate organizationId (user → header → JWT)
      │
      ▼
-TenantGuard (global)           ← requires org context unless @OptionalOrganization()
+JwtAuthGuard (global)          ← authenticates user (unless @Public())
      │
      ▼
-TenantMembershipValidator      ← verifies user belongs to org (when authenticated)
+TenantGuard (global)           ← requires org unless @OptionalOrganization()
+     │                           re-resolves candidate after auth
+     ▼
+TenantMembershipValidator      ← asserts active membership before context is accepted
+     │
+     ▼
+request.tenantContext          ← set only after membership validation succeeds
      │
      ▼
 Controller / Service
@@ -45,7 +51,18 @@ TenantScopedRepository         ← all reads/writes scoped by organizationId
 2. `X-Organization-Id` header — explicit workspace selection
 3. JWT `organizationId` or `orgId` claim — fallback until Auth module owns verification
 
-> **Rule:** Never trust a client-provided `organizationId` in the request body. Always use `TenantContextService.requireOrganizationId()`.
+### Membership gate (task 2.3.2)
+
+Resolved organization ids are **candidates** until membership is verified:
+
+1. Middleware stores `resolvedOrganizationId` only (does not accept tenant context).
+2. `JwtAuthGuard` must run before `TenantGuard` so `request.user` is available.
+3. `TenantGuard` re-resolves the candidate, calls `TenantMembershipValidator.assertMembership()`, then sets `request.tenantContext`.
+4. Non-members and archived organizations receive `403 TENANT_ORGANIZATION_FORBIDDEN`.
+5. Unauthenticated calls to tenant-scoped routes receive `401` when organization context is present.
+6. `@OptionalOrganization()` routes never accept tenant context (user-scoped / public).
+
+> **Rule:** Never trust a client-provided `organizationId` in the request body. Always use `TenantContextService.requireOrganizationId()` after the guard has accepted context.
 
 ---
 
@@ -239,7 +256,8 @@ await this.issuesRepository.scopedQueryBuilder('issue')
 
 | File | Purpose |
 |---|---|
-| `src/common/tenant/` | Context resolution, guard, middleware |
+| `src/common/tenant/` | Context resolution, guard, middleware, membership validation |
+| `src/common/tenant/tenant-membership.validator.ts` | Active membership gate before context acceptance |
 | `src/database/entities/tenant-scoped.entity.ts` | Base entity with `organizationId` |
 | `src/database/repositories/tenant-scoped.repository.ts` | Scoped CRUD operations |
 | `src/database/helpers/` | `withOrganizationScope`, `applyTenantScope` |
@@ -252,3 +270,4 @@ await this.issuesRepository.scopedQueryBuilder('issue')
 |---|---|---|
 | 1.0 | 2026-07-13 | Initial tenant isolation rules (Phase 0.2.5) |
 | 1.1 | 2026-07-23 | Documented v1 multi-membership policy (task 2.3.1) |
+| 1.2 | 2026-07-27 | Membership validation before tenant context acceptance (task 2.3.2) |
