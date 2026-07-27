@@ -24,7 +24,7 @@ v1 allows **multiple organization memberships per user** with **one active organ
 HTTP Request
      │
      ▼
-TenantContextMiddleware        ← resolves candidate organizationId (user → header → JWT)
+TenantContextMiddleware        ← resolves candidate organizationId (header → user → JWT)
      │
      ▼
 JwtAuthGuard (global)          ← authenticates user (unless @Public())
@@ -47,9 +47,13 @@ TenantScopedRepository         ← all reads/writes scoped by organizationId
 
 ### Organization context sources (priority order)
 
-1. `request.user.organizationId` — set by Auth module after JWT validation
-2. `X-Organization-Id` header — explicit workspace selection
-3. JWT `organizationId` or `orgId` claim — fallback until Auth module owns verification
+1. `X-Organization-Id` header — **preferred** explicit workspace selection for multi-org users
+2. `request.user.organizationId` — optional sticky claim set by Auth after JWT validation
+3. JWT `organizationId` or `orgId` claim — token fallback
+
+Organization ids must be UUIDs. Invalid candidates fail validation before membership checks.
+
+After membership validation succeeds, the accepted value is stored only on `request.tenantContext`. Downstream code must read that accepted context via `TenantContextService` or `@CurrentOrganization()`, never raw headers or JWT claims.
 
 ### Membership gate (task 2.3.2)
 
@@ -270,4 +274,5 @@ await this.issuesRepository.scopedQueryBuilder('issue')
 |---|---|---|
 | 1.0 | 2026-07-13 | Initial tenant isolation rules (Phase 0.2.5) |
 | 1.1 | 2026-07-23 | Documented v1 multi-membership policy (task 2.3.1) |
+| 1.2 | 2026-07-27 | Header-first organization resolution and UUID validation (task 2.3.3) |
 | 1.2 | 2026-07-27 | Membership validation before tenant context acceptance (task 2.3.2) |

@@ -17,7 +17,9 @@ Although users can belong to many organizations, **each request uses exactly one
 | User identity | Global (`User` entity) |
 | Membership storage | One `OrganizationMember` row per `(userId, organizationId)` |
 | Active workspace | Resolved per request, not stored on the user record |
-| Context source priority | `request.user.organizationId` → `X-Organization-Id` header → JWT `organizationId` / `orgId` claim |
+| Context source priority | `X-Organization-Id` header → `request.user.organizationId` → JWT `organizationId` / `orgId` claim |
+| Organization id format | UUID required; invalid candidates rejected before membership checks |
+| Accepted context | Stored on `request.tenantContext` only after membership validation |
 | Tenant-scoped routes | Require a valid active organization that the user belongs to |
 | Archived organizations | Hidden from active workflows; cannot be used as active context |
 
@@ -53,6 +55,19 @@ Providing an organization id is not enough. Tenant context is accepted only when
 
 Until those checks pass, `request.tenantContext` remains unset and downstream tenant-scoped repositories must not run.
 
+## Consistent organization resolution (task 2.3.3)
+
+Every tenant-scoped request resolves the active organization the same way:
+
+1. Prefer `X-Organization-Id` so workspace switching is explicit and immediate.
+2. Fall back to Auth/JWT claims only when the header is omitted.
+3. Reject non-UUID candidates with validation errors.
+4. Re-resolve in `TenantGuard` after authentication (middleware runs before JWT validation).
+5. Accept the organization into `request.tenantContext` only after active membership validation.
+6. Downstream modules must consume the accepted context (`TenantContextService` / `@CurrentOrganization()`), never re-parse headers.
+
+This keeps multi-org switching deterministic: changing the header changes the active workspace for that request without re-login.
+
 ## Code reference
 
 | Artifact | Purpose |
@@ -60,9 +75,10 @@ Until those checks pass, `request.tenantContext` remains unset and downstream te
 | `src/modules/organizations/constants/organization-membership-v1.policy.ts` | Machine-readable v1 policy constants |
 | `src/modules/organizations/entities/organization-member.entity.ts` | Membership join model |
 | `src/modules/organizations/services/organization-membership.service.ts` | Active membership queries |
-| `src/common/tenant/tenant-context.resolver.ts` | Active organization resolution |
+| `src/common/tenant/tenant-context.resolver.ts` | Consistent active organization resolution |
 | `src/common/tenant/tenant-membership.validator.ts` | Membership gate before context acceptance |
 | `src/common/tenant/guards/tenant.guard.ts` | Accepts `tenantContext` only after validation |
+| `src/common/tenant/decorators/current-organization.decorator.ts` | Reads accepted organization context |
 | `docs/tenant-isolation.md` | Tenant boundary and request lifecycle rules |
 
 ## Revision history
@@ -71,3 +87,4 @@ Until those checks pass, `request.tenantContext` remains unset and downstream te
 |---|---|---|
 | 1.0 | 2026-07-23 | v1 decision: multi-membership with explicit per-request active organization |
 | 1.1 | 2026-07-27 | Documented membership validation before tenant context acceptance (task 2.3.2) |
+| 1.2 | 2026-07-27 | Documented consistent header-first resolution and UUID validation (task 2.3.3) |

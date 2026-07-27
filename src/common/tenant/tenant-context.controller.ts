@@ -25,7 +25,7 @@ export class TenantContextController {
     required: true,
     description: 'Active organization context for the request',
   })
-  getContext(@CurrentOrganization() organizationId: string) {
+  getContext(@CurrentOrganization({ required: true }) organizationId: string) {
     return { organizationId };
   }
 }

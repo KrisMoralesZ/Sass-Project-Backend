@@ -146,6 +146,56 @@ describe('Tenant membership validation (e2e)', () => {
       });
   });
 
+  it('/api/v1/tenant/context (GET) rejects non-uuid organization ids', async () => {
+    const accessToken = await registerAndGetAccessToken('tenant-invalid-org');
+
+    await request(app.getHttpServer())
+      .get('/api/v1/tenant/context')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .set('x-organization-id', 'not-a-uuid')
+      .expect(400)
+      .expect((response) => {
+        const body = response.body as ApiErrorResponse;
+        expect(body.success).toBe(false);
+        expect(body.error.statusCode).toBe(400);
+        expect(body.error.code).toBe(ErrorCode.VALIDATION_FAILED);
+      });
+  });
+
+  it('/api/v1/tenant/context (GET) switches active organization via header', async () => {
+    const accessToken = await registerAndGetAccessToken('tenant-switch');
+    const firstOrganization = await createOrganization(
+      accessToken,
+      'First Workspace',
+      `first-workspace-${Date.now()}`,
+    );
+    const secondOrganization = await createOrganization(
+      accessToken,
+      'Second Workspace',
+      `second-workspace-${Date.now()}`,
+    );
+
+    await request(app.getHttpServer())
+      .get('/api/v1/tenant/context')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .set('x-organization-id', firstOrganization.id)
+      .expect(200)
+      .expect((response) => {
+        const body = response.body as ApiSuccessResponse<TenantContextData>;
+        expect(body.data.organizationId).toBe(firstOrganization.id);
+      });
+
+    await request(app.getHttpServer())
+      .get('/api/v1/tenant/context')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .set('x-organization-id', secondOrganization.id)
+      .expect(200)
+      .expect((response) => {
+        const body = response.body as ApiSuccessResponse<TenantContextData>;
+        expect(body.data.organizationId).toBe(secondOrganization.id);
+      });
+  });
+
   afterEach(async () => {
     await app.close();
   });

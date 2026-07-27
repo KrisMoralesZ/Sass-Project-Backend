@@ -6,6 +6,7 @@ import { ORGANIZATION_ID_HEADER } from '@common/tenant/constants/tenant.constant
 import { TenantContextResolver } from '@common/tenant/tenant-context.resolver';
 import { TenantMembershipValidator } from '@common/tenant/tenant-membership.validator';
 import { RequestWithTenantContext } from '@common/tenant/types/request-with-tenant-context.type';
+import type { OrganizationContextSource } from '@common/tenant/constants/tenant.constants';
 
 @Injectable()
 export class TenantGuard implements CanActivate {
@@ -30,10 +31,20 @@ export class TenantGuard implements CanActivate {
       .switchToHttp()
       .getRequest<RequestWithTenantContext>();
 
-    // Re-resolve after auth so request.user.organizationId is considered.
+    // Re-resolve after auth so header/user/JWT sources stay consistent.
+    const resolution = this.tenantContextResolver.resolveDetailed(request);
+    request.organizationResolution = resolution;
+
+    if (resolution.invalidCandidate) {
+      throw AppException.validationFailed(
+        `Invalid organization id from ${resolution.invalidCandidate.source}. Expected a UUID.`,
+      );
+    }
+
     const organizationId =
-      this.tenantContextResolver.resolve(request) ??
-      request.resolvedOrganizationId;
+      resolution.organizationId ?? request.resolvedOrganizationId;
+    const source =
+      resolution.source ?? request.organizationResolution?.source ?? 'header';
 
     if (!organizationId) {
       throw AppException.badRequest(
@@ -47,7 +58,7 @@ export class TenantGuard implements CanActivate {
       organizationId,
     );
 
-    this.acceptTenantContext(request, organizationId);
+    this.acceptTenantContext(request, organizationId, source);
 
     return true;
   }
@@ -55,8 +66,9 @@ export class TenantGuard implements CanActivate {
   private acceptTenantContext(
     request: RequestWithTenantContext,
     organizationId: string,
+    source: OrganizationContextSource,
   ): void {
     request.resolvedOrganizationId = organizationId;
-    request.tenantContext = { organizationId };
+    request.tenantContext = { organizationId, source };
   }
 }

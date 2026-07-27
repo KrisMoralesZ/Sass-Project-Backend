@@ -16,10 +16,12 @@ export class TenantContextMiddleware implements NestMiddleware {
     _response: Response,
     next: NextFunction,
   ): void {
-    const organizationId = this.tenantContextResolver.resolve(request);
+    const resolution = this.tenantContextResolver.resolveDetailed(request);
 
-    if (organizationId) {
-      request.resolvedOrganizationId = organizationId;
+    request.organizationResolution = resolution;
+
+    if (resolution.organizationId) {
+      request.resolvedOrganizationId = resolution.organizationId;
     }
 
     next();

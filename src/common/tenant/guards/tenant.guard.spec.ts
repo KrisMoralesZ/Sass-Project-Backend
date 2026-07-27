@@ -6,22 +6,25 @@ import { TenantContextResolver } from '@common/tenant/tenant-context.resolver';
 import { TenantMembershipValidator } from '@common/tenant/tenant-membership.validator';
 import { RequestWithTenantContext } from '@common/tenant/types/request-with-tenant-context.type';
 
+const ORG_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const MIDDLEWARE_ORG = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+
 describe('TenantGuard', () => {
   let guard: TenantGuard;
   let tenantMembershipValidator: jest.Mocked<TenantMembershipValidator>;
   let tenantContextResolver: jest.Mocked<TenantContextResolver>;
   let reflector: jest.Mocked<Reflector>;
   let assertMembership: jest.Mock;
-  let resolve: jest.Mock;
+  let resolveDetailed: jest.Mock;
 
   beforeEach(() => {
     assertMembership = jest.fn();
-    resolve = jest.fn();
+    resolveDetailed = jest.fn();
     tenantMembershipValidator = {
       assertMembership,
     } as unknown as jest.Mocked<TenantMembershipValidator>;
     tenantContextResolver = {
-      resolve,
+      resolveDetailed,
     } as unknown as jest.Mocked<TenantContextResolver>;
 
     reflector = {
@@ -42,7 +45,7 @@ describe('TenantGuard', () => {
     reflector.getAllAndOverride.mockReturnValue(true);
     const request = {
       headers: {},
-      resolvedOrganizationId: 'org-123',
+      resolvedOrganizationId: ORG_ID,
     } as RequestWithTenantContext;
 
     await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
@@ -52,7 +55,7 @@ describe('TenantGuard', () => {
 
   it('rejects requests without organization context', async () => {
     reflector.getAllAndOverride.mockReturnValue(false);
-    resolve.mockReturnValue(undefined);
+    resolveDetailed.mockReturnValue({});
     const request = { headers: {} } as RequestWithTenantContext;
 
     await expect(
@@ -63,9 +66,34 @@ describe('TenantGuard', () => {
     expect(assertMembership).not.toHaveBeenCalled();
   });
 
+  it('rejects invalid organization id candidates before membership checks', async () => {
+    reflector.getAllAndOverride.mockReturnValue(false);
+    resolveDetailed.mockReturnValue({
+      invalidCandidate: {
+        source: 'header',
+        value: 'not-a-uuid',
+      },
+    });
+    const request = {
+      headers: {},
+      user: { id: 'user-1' },
+    } as RequestWithTenantContext;
+
+    await expect(
+      guard.canActivate(createContext(request)),
+    ).rejects.toMatchObject({
+      code: ErrorCode.VALIDATION_FAILED,
+    });
+    expect(assertMembership).not.toHaveBeenCalled();
+    expect(request.tenantContext).toBeUndefined();
+  });
+
   it('accepts tenant context only after membership validation succeeds', async () => {
     reflector.getAllAndOverride.mockReturnValue(false);
-    resolve.mockReturnValue('org-123');
+    resolveDetailed.mockReturnValue({
+      organizationId: ORG_ID,
+      source: 'header',
+    });
     assertMembership.mockResolvedValue(undefined);
     const request = {
       headers: {},
@@ -73,13 +101,19 @@ describe('TenantGuard', () => {
     } as RequestWithTenantContext;
 
     await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
-    expect(assertMembership).toHaveBeenCalledWith(request.user, 'org-123');
-    expect(request.tenantContext).toEqual({ organizationId: 'org-123' });
+    expect(assertMembership).toHaveBeenCalledWith(request.user, ORG_ID);
+    expect(request.tenantContext).toEqual({
+      organizationId: ORG_ID,
+      source: 'header',
+    });
   });
 
   it('does not accept tenant context when membership validation fails', async () => {
     reflector.getAllAndOverride.mockReturnValue(false);
-    resolve.mockReturnValue('org-forbidden');
+    resolveDetailed.mockReturnValue({
+      organizationId: ORG_ID,
+      source: 'header',
+    });
     assertMembership.mockRejectedValue({
       code: ErrorCode.TENANT_ORGANIZATION_FORBIDDEN,
     });
@@ -98,21 +132,19 @@ describe('TenantGuard', () => {
 
   it('falls back to middleware-resolved organization id', async () => {
     reflector.getAllAndOverride.mockReturnValue(false);
-    resolve.mockReturnValue(undefined);
+    resolveDetailed.mockReturnValue({});
     assertMembership.mockResolvedValue(undefined);
     const request = {
       headers: {},
-      resolvedOrganizationId: 'org-from-middleware',
+      resolvedOrganizationId: MIDDLEWARE_ORG,
       user: { id: 'user-1' },
     } as RequestWithTenantContext;
 
     await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
-    expect(assertMembership).toHaveBeenCalledWith(
-      request.user,
-      'org-from-middleware',
-    );
+    expect(assertMembership).toHaveBeenCalledWith(request.user, MIDDLEWARE_ORG);
     expect(request.tenantContext).toEqual({
-      organizationId: 'org-from-middleware',
+      organizationId: MIDDLEWARE_ORG,
+      source: 'header',
     });
   });
 });
