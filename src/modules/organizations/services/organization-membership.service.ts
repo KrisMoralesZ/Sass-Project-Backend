@@ -49,11 +49,17 @@ export class OrganizationMembershipService {
     userId: string,
     organizationId: string,
   ): Promise<boolean> {
-    const count = await this.createActiveMembershipQueryBuilder(userId)
-      .andWhere('member.organizationId = :organizationId', { organizationId })
-      .getCount();
+    const membership = await this.getActiveMembership(userId, organizationId);
+    return membership !== null;
+  }
 
-    return count > 0;
+  async getActiveMembership(
+    userId: string,
+    organizationId: string,
+  ): Promise<OrganizationMember | null> {
+    return this.createActiveMembershipQueryBuilder(userId)
+      .andWhere('member.organizationId = :organizationId', { organizationId })
+      .getOne();
   }
 
   async getOrganizationIdsForUser(userId: string): Promise<string[]> {

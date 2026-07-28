@@ -56,8 +56,9 @@ Local verification: `npm run seed` creates Acme Workspace plus OWNER/ADMIN/MEMBE
 ## Out of scope for 3.2.1
 
 - Permission matrix for projects/boards/issues/invites/settings (task 3.2.2) — see [organization-permissions-v1.md](./organization-permissions-v1.md)
-- Role guards and decorators (task 3.2.4)
 - Custom/org-defined roles
+
+Role guards and decorators: [organization-rbac-v1.md](./organization-rbac-v1.md) (task 3.2.4).
 
 ## Revision history
 
@@ -66,3 +67,4 @@ Local verification: `npm run seed` creates Acme Workspace plus OWNER/ADMIN/MEMBE
 | 1.0 | 2026-07-27 | Defined OWNER, ADMIN, MEMBER, VIEWER as v1 base roles |
 | 1.1 | 2026-07-27 | Linked permission matrix documentation (task 3.2.2) |
 | 1.2 | 2026-07-27 | Confirmed OrganizationMember role join + DB seeds (task 3.2.3) |
+| 1.3 | 2026-07-27 | Linked RBAC guards documentation (task 3.2.4) |

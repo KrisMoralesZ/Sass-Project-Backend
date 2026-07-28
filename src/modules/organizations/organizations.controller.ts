@@ -22,7 +22,14 @@ import { OptionalOrganization } from '@common/tenant';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { ListOrganizationsQueryDto } from './dto/list-organizations-query.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
+import { OrganizationRole } from './enums/organization-role.enum';
+import { OrganizationPermission } from './permissions/organization-permission.enum';
 import { OrganizationsService } from './organizations.service';
+import {
+  OrganizationIdParam,
+  RequireMinRole,
+  RequirePermissions,
+} from './rbac';
 
 @ApiTags('organizations')
 @ApiBearerAuth()
@@ -68,11 +75,14 @@ export class OrganizationsController {
   }
 
   @Patch(':id')
+  @OrganizationIdParam('id')
+  @RequirePermissions(OrganizationPermission.SETTINGS_UPDATE)
   @ApiOperation({ summary: 'Update organization' })
   @ApiResponse({
     status: 200,
     description: 'Organization updated successfully',
   })
+  @ApiResponse({ status: 403, description: 'Missing settings:update permission' })
   @ApiResponse({ status: 404, description: 'Organization not found' })
   @ApiResponse({ status: 409, description: 'Organization slug already exists' })
   update(
@@ -85,11 +95,14 @@ export class OrganizationsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @OrganizationIdParam('id')
+  @RequireMinRole(OrganizationRole.OWNER)
   @ApiOperation({ summary: 'Archive organization' })
   @ApiResponse({
     status: 204,
     description: 'Organization archived successfully',
   })
+  @ApiResponse({ status: 403, description: 'Requires OWNER role' })
   @ApiResponse({ status: 404, description: 'Organization not found' })
   async remove(
     @Param('id', ParseUUIDPipe) id: string,

@@ -54,11 +54,17 @@ import {
   OrganizationPermission,
   roleHasPermission,
 } from '@organizations/permissions';
+import { RequirePermissions } from '@organizations/rbac';
 
 if (!roleHasPermission(member.role, OrganizationPermission.INVITE_CREATE)) {
   throw AppException.forbidden(...);
 }
+
+@RequirePermissions(OrganizationPermission.INVITE_CREATE)
+createInvite() { ... }
 ```
+
+See [organization-rbac-v1.md](./organization-rbac-v1.md) for guards and decorators (task 3.2.4).
 
 ## Code reference
 
@@ -66,11 +72,12 @@ if (!roleHasPermission(member.role, OrganizationPermission.INVITE_CREATE)) {
 |---|---|
 | `src/modules/organizations/permissions/organization-permission.enum.ts` | Permission catalog |
 | `src/modules/organizations/permissions/organization-permission.matrix.ts` | Role → permission matrix + helpers |
+| `src/modules/organizations/rbac/` | Guards and decorators (task 3.2.4) |
 | `docs/organization-roles-v1.md` | Base roles |
+| `docs/organization-rbac-v1.md` | Route-level RBAC |
 
 ## Out of scope for 3.2.2
 
-- Route guards / `@RequirePermissions()` decorators (task 3.2.4)
 - Project-scoped overrides
 - Custom permissions per organization
 
@@ -79,3 +86,4 @@ if (!roleHasPermission(member.role, OrganizationPermission.INVITE_CREATE)) {
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-07-27 | Initial matrix for projects, boards, issues, invites, settings |
+| 1.1 | 2026-07-27 | Linked RBAC guards documentation (task 3.2.4) |
