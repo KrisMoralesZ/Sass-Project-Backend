@@ -21,7 +21,7 @@ Roles are stored on `OrganizationMember.role` and apply at the **organization** 
 OWNER > ADMIN > MEMBER > VIEWER
 ```
 
-Use `hasAtLeastOrganizationRole(role, minimumRole)` when a feature needs “Admin or higher” style checks. The permission matrix (task 3.2.2) maps these roles to concrete actions.
+Use `hasAtLeastOrganizationRole(role, minimumRole)` when a feature needs “Admin or higher” style checks. Prefer the [permission matrix](./organization-permissions-v1.md) for action-level authorization.
 
 ## Assignment rules (v1)
 
@@ -43,7 +43,7 @@ All four roles are assignable in v1. Preventing removal of the last owner is han
 
 ## Out of scope for 3.2.1
 
-- Permission matrix for projects/boards/issues/invites/settings (task 3.2.2)
+- Permission matrix for projects/boards/issues/invites/settings (task 3.2.2) — see [organization-permissions-v1.md](./organization-permissions-v1.md)
 - Role guards and decorators (task 3.2.4)
 - Custom/org-defined roles
 
@@ -52,3 +52,4 @@ All four roles are assignable in v1. Preventing removal of the last owner is han
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-07-27 | Defined OWNER, ADMIN, MEMBER, VIEWER as v1 base roles |
+| 1.1 | 2026-07-27 | Linked permission matrix documentation (task 3.2.2) |
