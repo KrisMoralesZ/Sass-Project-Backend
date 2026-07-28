@@ -5,7 +5,7 @@ import { ErrorCode } from '@common/errors/error-code.enum';
 import { OrganizationMember } from './entities/organization-member.entity';
 import { Organization } from './entities/organization.entity';
 import { OrganizationPlan } from './enums/organization-plan.enum';
-import { OrganizationRole } from './enums/organization-role.enum';
+import { ORGANIZATION_CREATOR_ROLE } from './enums/organization-role.enum';
 import { OrganizationsService } from './organizations.service';
 import { OrganizationMembershipService } from './services/organization-membership.service';
 import { DEFAULT_ORGANIZATION_SETTINGS } from './interfaces/organization-settings.interface';
@@ -136,7 +136,7 @@ describe('OrganizationsService', () => {
     expect(membersRepository.create).toHaveBeenCalledWith({
       organizationId: 'org-1',
       userId: 'user-1',
-      role: OrganizationRole.OWNER,
+      role: ORGANIZATION_CREATOR_ROLE,
     });
     expect(result.slug).toBe('acme-corporation');
     expect(organizationsRepository.create).toHaveBeenCalledWith(

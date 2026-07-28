@@ -16,7 +16,7 @@ import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { OrganizationMember } from './entities/organization-member.entity';
 import { Organization } from './entities/organization.entity';
 import { OrganizationPlan } from './enums/organization-plan.enum';
-import { OrganizationRole } from './enums/organization-role.enum';
+import { ORGANIZATION_CREATOR_ROLE } from './enums/organization-role.enum';
 import { OrganizationResponse } from './interfaces/organization-response.interface';
 import { OrganizationMembershipService } from './services/organization-membership.service';
 import {
@@ -71,7 +71,7 @@ export class OrganizationsService {
           membersRepository.create({
             organizationId: persistedOrganization.id,
             userId,
-            role: OrganizationRole.OWNER,
+            role: ORGANIZATION_CREATOR_ROLE,
           }),
         );
 

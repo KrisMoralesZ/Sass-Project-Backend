@@ -1,6 +1,9 @@
 import { User } from '@authentication/entities/user.entity';
 import { TenantScopedEntity } from '@database/entities/tenant-scoped.entity';
-import { OrganizationRole } from '@organizations/enums/organization-role.enum';
+import {
+  DEFAULT_ORGANIZATION_ROLE,
+  OrganizationRole,
+} from '@organizations/enums/organization-role.enum';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { Organization } from './organization.entity';
 
@@ -9,8 +12,10 @@ import { Organization } from './organization.entity';
  *
  * v1 policy: users may belong to multiple organizations; each request selects
  * one active organization via tenant context.
+ * Role values are the base set defined in organization-roles-v1.md.
  *
  * @see ../../../../docs/organization-membership-v1.md
+ * @see ../../../../docs/organization-roles-v1.md
  * @see ../../../../docs/tenant-isolation.md
  */
 @Entity('organization_members')
@@ -33,7 +38,7 @@ export class OrganizationMember extends TenantScopedEntity {
   @Column({
     type: 'enum',
     enum: OrganizationRole,
-    default: OrganizationRole.MEMBER,
+    default: DEFAULT_ORGANIZATION_ROLE,
   })
   role!: OrganizationRole;
 }

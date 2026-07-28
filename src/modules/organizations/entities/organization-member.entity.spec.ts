@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { getMetadataArgsStorage } from 'typeorm';
 import { TenantScopedEntity } from '@database/entities/tenant-scoped.entity';
-import { OrganizationRole } from '@organizations/enums/organization-role.enum';
+import { DEFAULT_ORGANIZATION_ROLE } from '@organizations/enums/organization-role.enum';
 import { OrganizationMember } from './organization-member.entity';
 
 describe('OrganizationMember', () => {
@@ -31,6 +31,6 @@ describe('OrganizationMember', () => {
         column.target === OrganizationMember && column.propertyName === 'role',
     );
 
-    expect(roleColumn?.options.default).toBe(OrganizationRole.MEMBER);
+    expect(roleColumn?.options.default).toBe(DEFAULT_ORGANIZATION_ROLE);
   });
 });
