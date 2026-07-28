@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AppException, ErrorCode } from '@common/errors';
+import { UsersService } from '@users/users.service';
 import { AuthenticationService } from './authentication.service';
 import { User } from './entities/user.entity';
 import { TokenService } from './token.service';
@@ -36,6 +37,7 @@ describe('AuthenticationService', () => {
       'assertNotLocked' | 'recordFailedAttempt' | 'resetAttempts'
     >
   >;
+  let usersService: jest.Mocked<Pick<UsersService, 'createProfileForUser'>>;
 
   const savedUser: User = {
     id: 'user-1',
@@ -47,6 +49,7 @@ describe('AuthenticationService', () => {
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     deletedAt: null,
+    memberships: [],
   };
 
   beforeEach(async () => {
@@ -85,6 +88,14 @@ describe('AuthenticationService', () => {
       resetAttempts: jest.fn().mockResolvedValue(undefined),
     };
 
+    usersService = {
+      createProfileForUser: jest.fn().mockResolvedValue({
+        id: 'profile-1',
+        userId: 'user-1',
+        displayName: 'Jane Owner',
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthenticationService,
@@ -112,6 +123,10 @@ describe('AuthenticationService', () => {
           provide: AccountLockoutService,
           useValue: accountLockoutService,
         },
+        {
+          provide: UsersService,
+          useValue: usersService,
+        },
       ],
     }).compile();
 
@@ -130,6 +145,10 @@ describe('AuthenticationService', () => {
     expect(tokenService.generateTokens).toHaveBeenCalledWith(
       'user-1',
       'owner@company.com',
+    );
+    expect(usersService.createProfileForUser).toHaveBeenCalledWith(
+      'user-1',
+      'Jane Owner',
     );
     expect(result.tokens.accessToken).toBe('access-token');
   });
