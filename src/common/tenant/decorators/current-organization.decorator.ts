@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { RequestWithTenantContext } from '../types/request-with-tenant-context.type';
+import { RequestWithTenantContext } from '@common/tenant/types/request-with-tenant-context.type';
 
 export const CurrentOrganization = createParamDecorator(
   (_data: unknown, context: ExecutionContext): string | undefined => {

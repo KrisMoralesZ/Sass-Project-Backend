@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
-import { AppException } from '../common/errors';
+import { AppException } from '@common/errors';
 import { RefreshToken } from './entities/refresh-token.entity';
 import {
   AuthTokens,

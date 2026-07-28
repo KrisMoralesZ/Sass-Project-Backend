@@ -6,11 +6,11 @@ import {
   Repository,
   SelectQueryBuilder,
 } from 'typeorm';
-import { AppException, ErrorCode } from '../../common/errors';
-import { TenantContextService } from '../../common/tenant/tenant-context.service';
-import { TenantScopedEntity } from '../entities/tenant-scoped.entity';
-import { applyTenantScope } from '../helpers/apply-tenant-scope.helper';
-import { withOrganizationScope } from '../helpers/tenant-find-options.helper';
+import { AppException, ErrorCode } from '@common/errors';
+import { TenantContextService } from '@common/tenant/tenant-context.service';
+import { TenantScopedEntity } from '@database/entities/tenant-scoped.entity';
+import { applyTenantScope } from '@database/helpers/apply-tenant-scope.helper';
+import { withOrganizationScope } from '@database/helpers/tenant-find-options.helper';
 
 /**
  * Repository base for tenant-owned entities. All queries are scoped to the

@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
-import { SortOrder } from '../enums/sort-order.enum';
+import { SortOrder } from '@common/enums/sort-order.enum';
 
 export class SortQueryDto {
   @ApiPropertyOptional({

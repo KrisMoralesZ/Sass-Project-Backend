@@ -1,8 +1,8 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { NextFunction, Response } from 'express';
-import { REQUEST_ID_HEADER } from '../constants/logging.constants';
-import { RequestWithLogging } from '../types/request-with-logging.type';
+import { REQUEST_ID_HEADER } from '@common/logging/constants/logging.constants';
+import { RequestWithLogging } from '@common/logging/types/request-with-logging.type';
 
 @Injectable()
 export class RequestIdMiddleware implements NestMiddleware {

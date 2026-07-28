@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AUTH_THROTTLE_NAME } from './throttle.constants';
-import { AppConfigModule } from '../../config/app-config.module';
-import { AppThrottlerGuard } from '../guards/app-throttler.guard';
+import { AppConfigModule } from '@config/app-config.module';
+import { AppThrottlerGuard } from '@common/guards/app-throttler.guard';
 
 @Module({
   imports: [

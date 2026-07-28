@@ -1,7 +1,7 @@
 import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import type { Request } from 'express';
-import { AppException, ErrorCode } from '../errors';
+import { AppException, ErrorCode } from '@common/errors';
 import { TenantContext } from './interfaces/tenant-context.interface';
 import type { RequestWithTenantContext } from './types/request-with-tenant-context.type';
 

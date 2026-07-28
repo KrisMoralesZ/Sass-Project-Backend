@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { AppException } from '../errors';
+import { AppException } from '@common/errors';
 
 @Injectable()
 export class AppThrottlerGuard extends ThrottlerGuard {

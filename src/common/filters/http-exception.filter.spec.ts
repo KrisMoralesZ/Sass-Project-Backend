@@ -1,6 +1,6 @@
 import { BadRequestException, HttpStatus } from '@nestjs/common';
 import { ArgumentsHost } from '@nestjs/common/interfaces';
-import { AppException, ErrorCode } from '../errors';
+import { AppException, ErrorCode } from '@common/errors';
 import { HttpExceptionFilter } from './http-exception.filter';
 
 describe('HttpExceptionFilter', () => {

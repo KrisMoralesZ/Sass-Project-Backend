@@ -1,16 +1,16 @@
 import { FindManyOptions } from 'typeorm';
-import { AppException, ErrorCode } from '../errors';
+import { AppException, ErrorCode } from '@common/errors';
 import {
   DEFAULT_LIMIT,
   DEFAULT_PAGE,
   PaginationQueryDto,
-} from '../dto/pagination-query.dto';
-import { SortQueryDto } from '../dto/sort-query.dto';
-import { SortOrder } from '../enums/sort-order.enum';
+} from '@common/dto/pagination-query.dto';
+import { SortQueryDto } from '@common/dto/sort-query.dto';
+import { SortOrder } from '@common/enums/sort-order.enum';
 import {
   PaginatedResult,
   PaginationMeta,
-} from '../interfaces/paginated-response.interface';
+} from '@common/interfaces/paginated-response.interface';
 
 export interface ResolvedPagination {
   page: number;

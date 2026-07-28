@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AppException, ErrorCode } from '../errors';
+import { AppException, ErrorCode } from '@common/errors';
 import { AuthenticatedUser } from './interfaces/tenant-context.interface';
 
 @Injectable()

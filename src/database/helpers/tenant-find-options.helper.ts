@@ -1,5 +1,5 @@
 import { FindOptionsWhere } from 'typeorm';
-import { TenantScopedEntity } from '../entities/tenant-scoped.entity';
+import { TenantScopedEntity } from '@database/entities/tenant-scoped.entity';
 
 export function withOrganizationScope<T extends TenantScopedEntity>(
   organizationId: string,

@@ -1,10 +1,10 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { AppException, ErrorCode } from '../../errors';
-import { OPTIONAL_ORGANIZATION_KEY } from '../constants/tenant-metadata.constants';
-import { ORGANIZATION_ID_HEADER } from '../constants/tenant.constants';
-import { TenantMembershipValidator } from '../tenant-membership.validator';
-import { RequestWithTenantContext } from '../types/request-with-tenant-context.type';
+import { AppException, ErrorCode } from '@common/errors';
+import { OPTIONAL_ORGANIZATION_KEY } from '@common/tenant/constants/tenant-metadata.constants';
+import { ORGANIZATION_ID_HEADER } from '@common/tenant/constants/tenant.constants';
+import { TenantMembershipValidator } from '@common/tenant/tenant-membership.validator';
+import { RequestWithTenantContext } from '@common/tenant/types/request-with-tenant-context.type';
 
 @Injectable()
 export class TenantGuard implements CanActivate {

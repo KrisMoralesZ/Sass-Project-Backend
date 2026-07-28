@@ -1,9 +1,9 @@
 import 'reflect-metadata';
-import { ErrorCode } from '../../common/errors';
+import { ErrorCode } from '@common/errors';
 import { Repository } from 'typeorm';
-import { TenantContextService } from '../../common/tenant/tenant-context.service';
-import { RequestWithTenantContext } from '../../common/tenant/types/request-with-tenant-context.type';
-import { TenantScopedEntity } from '../entities/tenant-scoped.entity';
+import { TenantContextService } from '@common/tenant/tenant-context.service';
+import { RequestWithTenantContext } from '@common/tenant/types/request-with-tenant-context.type';
+import { TenantScopedEntity } from '@database/entities/tenant-scoped.entity';
 import { TenantScopedRepository } from './tenant-scoped.repository';
 
 class TestProject extends TenantScopedEntity {
