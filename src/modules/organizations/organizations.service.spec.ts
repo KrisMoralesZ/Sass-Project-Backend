@@ -8,6 +8,8 @@ import { OrganizationPlan } from './enums/organization-plan.enum';
 import { OrganizationRole } from './enums/organization-role.enum';
 import { OrganizationsService } from './organizations.service';
 import { OrganizationMembershipService } from './services/organization-membership.service';
+import { DEFAULT_ORGANIZATION_SETTINGS } from './interfaces/organization-settings.interface';
+import { OrganizationFeatureFlag } from './interfaces/organization-feature-flags.interface';
 
 describe('OrganizationsService', () => {
   let service: OrganizationsService;
@@ -25,7 +27,7 @@ describe('OrganizationsService', () => {
   let organizationMembershipService: jest.Mocked<
     Pick<
       OrganizationMembershipService,
-      'getOrganizationIdsForUser' | 'isMember'
+      'getActiveOrganizationIdsForUser' | 'isActiveMember'
     >
   >;
 
@@ -37,6 +39,13 @@ describe('OrganizationsService', () => {
     settings: {
       timezone: 'UTC',
       locale: 'en',
+      branding: {
+        logoUrl: null,
+        primaryColor: null,
+        accentColor: null,
+        appName: null,
+      },
+      featureFlags: DEFAULT_ORGANIZATION_SETTINGS.featureFlags,
     },
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -61,8 +70,8 @@ describe('OrganizationsService', () => {
     };
 
     organizationMembershipService = {
-      getOrganizationIdsForUser: jest.fn().mockResolvedValue(['org-1']),
-      isMember: jest.fn().mockResolvedValue(true),
+      getActiveOrganizationIdsForUser: jest.fn().mockResolvedValue(['org-1']),
+      isActiveMember: jest.fn().mockResolvedValue(true),
     };
 
     const transactionManager = {
@@ -130,6 +139,12 @@ describe('OrganizationsService', () => {
       role: OrganizationRole.OWNER,
     });
     expect(result.slug).toBe('acme-corporation');
+    expect(organizationsRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        settings: DEFAULT_ORGANIZATION_SETTINGS,
+      }),
+    );
+    expect(result.settings).toEqual(DEFAULT_ORGANIZATION_SETTINGS);
   });
 
   it('creates an organization with a suffixed slug when the base slug is taken', async () => {
@@ -164,14 +179,14 @@ describe('OrganizationsService', () => {
     const result = await service.findAll({}, 'user-1');
 
     expect(
-      organizationMembershipService.getOrganizationIdsForUser,
+      organizationMembershipService.getActiveOrganizationIdsForUser,
     ).toHaveBeenCalledWith('user-1');
     expect(result.items).toHaveLength(1);
     expect(result.pagination.total).toBe(1);
   });
 
   it('returns an empty list when the user has no memberships', async () => {
-    organizationMembershipService.getOrganizationIdsForUser.mockResolvedValue(
+    organizationMembershipService.getActiveOrganizationIdsForUser.mockResolvedValue(
       [],
     );
 
@@ -193,7 +208,7 @@ describe('OrganizationsService', () => {
       'user-1',
     );
 
-    expect(organizationMembershipService.isMember).toHaveBeenCalledWith(
+    expect(organizationMembershipService.isActiveMember).toHaveBeenCalledWith(
       'user-1',
       'org-1',
     );
@@ -231,12 +246,95 @@ describe('OrganizationsService', () => {
     });
   });
 
-  it('returns not found when accessing an organization without membership', async () => {
-    organizationMembershipService.isMember.mockResolvedValue(false);
+  it('returns not found when accessing an archived or inaccessible organization', async () => {
+    organizationMembershipService.isActiveMember.mockResolvedValue(false);
 
     await expect(service.findOne('org-1', 'user-1')).rejects.toMatchObject({
       code: ErrorCode.RESOURCE_NOT_FOUND,
       message: 'Organization not found',
+    });
+  });
+
+  it('normalizes missing branding placeholders in responses', async () => {
+    organizationsRepository.findOne.mockResolvedValue({
+      ...organization,
+      settings: {
+        timezone: 'UTC',
+        locale: 'en',
+        branding: {
+          logoUrl: null,
+          primaryColor: null,
+          accentColor: null,
+          appName: null,
+        },
+        featureFlags: DEFAULT_ORGANIZATION_SETTINGS.featureFlags,
+      },
+    });
+
+    const result = await service.findOne('org-1', 'user-1');
+
+    expect(result.settings).toEqual(DEFAULT_ORGANIZATION_SETTINGS);
+  });
+
+  it('merges organization settings updates while preserving branding placeholders', async () => {
+    organizationsRepository.findOne.mockResolvedValueOnce({
+      ...organization,
+      settings: DEFAULT_ORGANIZATION_SETTINGS,
+    });
+
+    const result = await service.update(
+      'org-1',
+      {
+        settings: {
+          locale: 'en-US',
+          branding: {
+            primaryColor: '#2563eb',
+          },
+        },
+      },
+      'user-1',
+    );
+
+    expect(organizationsRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        settings: {
+          timezone: 'UTC',
+          locale: 'en-US',
+          branding: {
+            logoUrl: null,
+            primaryColor: '#2563eb',
+            accentColor: null,
+            appName: null,
+          },
+          featureFlags: DEFAULT_ORGANIZATION_SETTINGS.featureFlags,
+        },
+      }),
+    );
+    expect(result.settings.branding.primaryColor).toBe('#2563eb');
+    expect(result.settings.locale).toBe('en-US');
+  });
+
+  it('merges feature flag updates for an organization', async () => {
+    organizationsRepository.findOne.mockResolvedValueOnce({
+      ...organization,
+      settings: DEFAULT_ORGANIZATION_SETTINGS,
+    });
+
+    const result = await service.update(
+      'org-1',
+      {
+        settings: {
+          featureFlags: {
+            [OrganizationFeatureFlag.BETA_BOARDS]: true,
+          },
+        },
+      },
+      'user-1',
+    );
+
+    expect(result.settings.featureFlags).toEqual({
+      ...DEFAULT_ORGANIZATION_SETTINGS.featureFlags,
+      [OrganizationFeatureFlag.BETA_BOARDS]: true,
     });
   });
 
