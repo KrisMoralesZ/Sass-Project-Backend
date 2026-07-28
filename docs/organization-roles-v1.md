@@ -38,8 +38,20 @@ All four roles are assignable in v1. Preventing removal of the last owner is han
 | Artifact | Purpose |
 |---|---|
 | `src/modules/organizations/enums/organization-role.enum.ts` | Enum, ranks, definitions, helpers |
-| `src/modules/organizations/entities/organization-member.entity.ts` | Persists `role` per membership |
+| `src/modules/organizations/entities/organization-member.entity.ts` | Join entity with `role` (task 3.2.3) |
+| `src/database/seeds/` | Dev seeds creating one member per base role |
 | `docs/organization-membership-v1.md` | Multi-org membership policy |
+| `docs/database-seeds.md` | How to run membership/role seeds |
+
+## Task 3.2.3 status
+
+`OrganizationMember` is the join entity for users ↔ organizations and stores `role` as `OrganizationRole` with:
+
+- unique `(organizationId, userId)`
+- default `MEMBER`
+- relations to `User` and `Organization`
+
+Local verification: `npm run seed` creates Acme Workspace plus OWNER/ADMIN/MEMBER/VIEWER memberships.
 
 ## Out of scope for 3.2.1
 
@@ -53,3 +65,4 @@ All four roles are assignable in v1. Preventing removal of the last owner is han
 |---|---|---|
 | 1.0 | 2026-07-27 | Defined OWNER, ADMIN, MEMBER, VIEWER as v1 base roles |
 | 1.1 | 2026-07-27 | Linked permission matrix documentation (task 3.2.2) |
+| 1.2 | 2026-07-27 | Confirmed OrganizationMember role join + DB seeds (task 3.2.3) |
