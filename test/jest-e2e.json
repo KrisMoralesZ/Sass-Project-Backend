@@ -13,6 +13,7 @@
     "^@config/(.*)$": "<rootDir>/../src/config/$1",
     "^@database/(.*)$": "<rootDir>/../src/database/$1",
     "^@health/(.*)$": "<rootDir>/../src/modules/health/$1",
-    "^@authentication/(.*)$": "<rootDir>/../src/modules/authentication/$1"
+    "^@authentication/(.*)$": "<rootDir>/../src/modules/authentication/$1",
+    "^@organizations/(.*)$": "<rootDir>/../src/modules/organizations/$1"
   }
 }

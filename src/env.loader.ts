@@ -11,6 +11,7 @@ register({
     '@database/*': ['database/*'],
     '@health/*': ['modules/health/*'],
     '@authentication/*': ['modules/authentication/*'],
+    '@organizations/*': ['modules/organizations/*'],
   },
 });
 
