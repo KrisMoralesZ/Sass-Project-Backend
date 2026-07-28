@@ -92,7 +92,7 @@
       "^@config/(.*)$": "<rootDir>/config/$1",
       "^@database/(.*)$": "<rootDir>/database/$1",
       "^@health/(.*)$": "<rootDir>/modules/health/$1",
-      "^@authentication/(.*)$": "<rootDir>/authentication/$1"
+      "^@authentication/(.*)$": "<rootDir>/modules/authentication/$1"
     }
   }
 }

@@ -20,7 +20,7 @@
       "@config/*": ["src/config/*"],
       "@database/*": ["src/database/*"],
       "@health/*": ["src/modules/health/*"],
-      "@authentication/*": ["src/authentication/*"]
+      "@authentication/*": ["src/modules/authentication/*"]
     },
     "incremental": true,
     "skipLibCheck": true,
@@ -28,6 +28,8 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false
-  }
+    "noFallthroughCasesInSwitch": false,
+    "types": ["node", "jest"]
+  },
+  "include": ["src/**/*", "test/**/*"]
 }
