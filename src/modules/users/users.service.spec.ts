@@ -3,6 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { ErrorCode } from '@common/errors/error-code.enum';
 import { User } from '@authentication/entities/user.entity';
+import { DEFAULT_USER_PROFILE_PREFERENCES } from './interfaces/user-profile-preferences.interface';
 import { UserProfile } from './entities/user-profile.entity';
 import { UsersService } from './users.service';
 
@@ -40,6 +41,8 @@ describe('UsersService', () => {
     id: 'profile-1',
     userId: 'user-1',
     displayName: 'Jane Owner',
+    avatarUrl: null,
+    preferences: { ...DEFAULT_USER_PROFILE_PREFERENCES },
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     deletedAt: null,
@@ -113,7 +116,7 @@ describe('UsersService', () => {
     service = module.get(UsersService);
   });
 
-  it('creates a profile for a new user', async () => {
+  it('creates a profile with default avatar and preferences', async () => {
     profilesRepository.findOne.mockResolvedValue(null);
 
     const result = await service.createProfileForUser('user-1', 'Jane Owner');
@@ -121,11 +124,13 @@ describe('UsersService', () => {
     expect(profilesRepository.create).toHaveBeenCalledWith({
       userId: 'user-1',
       displayName: 'Jane Owner',
+      avatarUrl: null,
+      preferences: DEFAULT_USER_PROFILE_PREFERENCES,
     });
     expect(result.displayName).toBe('Jane Owner');
   });
 
-  it('returns the current user profile', async () => {
+  it('returns the current user profile with normalized preferences', async () => {
     usersRepository.findOne.mockResolvedValue(user);
     profilesRepository.findOne.mockResolvedValue(profile);
 
@@ -134,6 +139,8 @@ describe('UsersService', () => {
       userId: 'user-1',
       email: 'owner@company.com',
       displayName: 'Jane Owner',
+      avatarUrl: null,
+      preferences: DEFAULT_USER_PROFILE_PREFERENCES,
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
     });
@@ -141,7 +148,10 @@ describe('UsersService', () => {
 
   it('updates the profile and syncs displayName to the user record', async () => {
     usersRepository.findOne.mockResolvedValue(user);
-    profilesRepository.findOne.mockResolvedValue({ ...profile });
+    profilesRepository.findOne.mockResolvedValue({
+      ...profile,
+      preferences: { ...DEFAULT_USER_PROFILE_PREFERENCES },
+    });
 
     const result = await service.updateMyProfile('user-1', {
       displayName: 'Jane Updated',
@@ -154,6 +164,43 @@ describe('UsersService', () => {
       expect.objectContaining({ displayName: 'Jane Updated' }),
     );
     expect(result.displayName).toBe('Jane Updated');
+  });
+
+  it('updates avatar and preference fields', async () => {
+    usersRepository.findOne.mockResolvedValue(user);
+    profilesRepository.findOne.mockResolvedValue({
+      ...profile,
+      preferences: { ...DEFAULT_USER_PROFILE_PREFERENCES },
+    });
+
+    const result = await service.updateMyProfile('user-1', {
+      avatarUrl: 'https://cdn.example.com/avatars/jane.png',
+      preferences: {
+        theme: 'dark',
+        notifications: {
+          email: false,
+        },
+      },
+    });
+
+    expect(transactionProfilesRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        avatarUrl: 'https://cdn.example.com/avatars/jane.png',
+        preferences: {
+          timezone: 'UTC',
+          locale: 'en',
+          theme: 'dark',
+          notifications: {
+            email: false,
+            inApp: true,
+            marketing: false,
+          },
+        },
+      }),
+    );
+    expect(result.avatarUrl).toBe('https://cdn.example.com/avatars/jane.png');
+    expect(result.preferences.theme).toBe('dark');
+    expect(result.preferences.notifications.email).toBe(false);
   });
 
   it('throws not found when the user does not exist', async () => {

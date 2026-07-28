@@ -6,6 +6,11 @@ import { AppException } from '@common/errors';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 import { UserProfile } from './entities/user-profile.entity';
 import { UserProfileResponse } from './interfaces/user-profile-response.interface';
+import {
+  createDefaultUserProfilePreferences,
+  mergeUserProfilePreferences,
+  normalizeUserProfilePreferences,
+} from './utils/user-profile-preferences.util';
 
 @Injectable()
 export class UsersService {
@@ -32,6 +37,8 @@ export class UsersService {
     const profile = this.profilesRepository.create({
       userId,
       displayName,
+      avatarUrl: null,
+      preferences: createDefaultUserProfilePreferences(),
     });
 
     return this.profilesRepository.save(profile);
@@ -51,25 +58,63 @@ export class UsersService {
     const user = await this.findUserById(userId);
     const profile = await this.ensureProfile(user);
 
-    if (dto.displayName !== undefined) {
-      const nextDisplayName =
-        dto.displayName === null ? null : dto.displayName.trim();
+    const nextDisplayName =
+      dto.displayName === undefined
+        ? undefined
+        : dto.displayName === null
+          ? null
+          : dto.displayName.trim();
 
-      if (nextDisplayName !== null && nextDisplayName.length === 0) {
-        throw AppException.validationFailed('displayName must not be empty');
-      }
+    if (nextDisplayName !== undefined && nextDisplayName === '') {
+      throw AppException.validationFailed('displayName must not be empty');
+    }
 
-      await this.dataSource.transaction(async (manager) => {
-        const usersRepository = manager.getRepository(User);
-        const profilesRepository = manager.getRepository(UserProfile);
+    const nextAvatarUrl =
+      dto.avatarUrl === undefined
+        ? undefined
+        : dto.avatarUrl === null
+          ? null
+          : dto.avatarUrl.trim();
 
+    if (nextAvatarUrl !== undefined && nextAvatarUrl === '') {
+      throw AppException.validationFailed('avatarUrl must not be empty');
+    }
+
+    const shouldUpdateDisplayName = nextDisplayName !== undefined;
+    const shouldUpdateAvatar = nextAvatarUrl !== undefined;
+    const shouldUpdatePreferences = dto.preferences !== undefined;
+
+    if (
+      !shouldUpdateDisplayName &&
+      !shouldUpdateAvatar &&
+      !shouldUpdatePreferences
+    ) {
+      return this.toResponse(user, profile);
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      const usersRepository = manager.getRepository(User);
+      const profilesRepository = manager.getRepository(UserProfile);
+
+      if (shouldUpdateDisplayName) {
         user.displayName = nextDisplayName;
         profile.displayName = nextDisplayName;
-
         await usersRepository.save(user);
-        await profilesRepository.save(profile);
-      });
-    }
+      }
+
+      if (shouldUpdateAvatar) {
+        profile.avatarUrl = nextAvatarUrl;
+      }
+
+      if (shouldUpdatePreferences && dto.preferences) {
+        profile.preferences = mergeUserProfilePreferences(
+          profile.preferences,
+          dto.preferences,
+        );
+      }
+
+      await profilesRepository.save(profile);
+    });
 
     return this.toResponse(user, profile);
   }
@@ -96,6 +141,8 @@ export class UsersService {
       userId: user.id,
       email: user.email,
       displayName: profile.displayName,
+      avatarUrl: profile.avatarUrl,
+      preferences: normalizeUserProfilePreferences(profile.preferences),
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
     };

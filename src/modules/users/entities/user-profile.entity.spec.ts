@@ -8,12 +8,28 @@ describe('UserProfile', () => {
     expect(Object.getPrototypeOf(UserProfile)).toBe(BaseEntity);
   });
 
-  it('defines userId and displayName columns', () => {
+  it('defines displayName, avatarUrl, and preferences columns', () => {
     const columns = getMetadataArgsStorage()
       .columns.filter((column) => column.target === UserProfile)
       .map((column) => column.propertyName);
 
-    expect(columns).toEqual(expect.arrayContaining(['userId', 'displayName']));
+    expect(columns).toEqual(
+      expect.arrayContaining([
+        'userId',
+        'displayName',
+        'avatarUrl',
+        'preferences',
+      ]),
+    );
+  });
+
+  it('stores preferences as jsonb', () => {
+    const preferencesColumn = getMetadataArgsStorage().columns.find(
+      (column) =>
+        column.target === UserProfile && column.propertyName === 'preferences',
+    );
+
+    expect(preferencesColumn?.options.type).toBe('jsonb');
   });
 
   it('enforces a unique profile per user', () => {

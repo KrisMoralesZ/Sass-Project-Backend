@@ -1,12 +1,12 @@
 import { User } from '@authentication/entities/user.entity';
 import { BaseEntity } from '@database/entities/base.entity';
+import type { UserProfilePreferences } from '@users/interfaces/user-profile-preferences.interface';
 import { Column, Entity, Index, JoinColumn, OneToOne } from 'typeorm';
 
 /**
  * Profile data for a global user identity.
  *
  * Auth credentials live on {@link User}; profile presentation fields live here.
- * Additional fields (avatar, preferences) are added in task 3.1.2.
  *
  * @see ../../../../docs/next-tasks-and-subtasks.md
  */
@@ -22,4 +22,10 @@ export class UserProfile extends BaseEntity {
 
   @Column({ type: 'varchar', length: 120, nullable: true })
   displayName!: string | null;
+
+  @Column({ type: 'varchar', length: 2048, nullable: true })
+  avatarUrl!: string | null;
+
+  @Column({ type: 'jsonb', default: {} })
+  preferences!: UserProfilePreferences;
 }

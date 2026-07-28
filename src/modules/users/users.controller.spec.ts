@@ -33,6 +33,17 @@ describe('UsersController', () => {
       userId: 'user-1',
       email: 'owner@company.com',
       displayName: 'Jane Owner',
+      avatarUrl: null,
+      preferences: {
+        timezone: 'UTC',
+        locale: 'en',
+        theme: 'system' as const,
+        notifications: {
+          email: true,
+          inApp: true,
+          marketing: false,
+        },
+      },
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -43,12 +54,27 @@ describe('UsersController', () => {
   });
 
   it('delegates updateMe to the service', async () => {
-    const dto = { displayName: 'Jane Updated' };
+    const dto = {
+      displayName: 'Jane Updated',
+      avatarUrl: 'https://cdn.example.com/avatars/jane.png',
+      preferences: { theme: 'dark' as const },
+    };
     usersService.updateMyProfile.mockResolvedValue({
       id: 'profile-1',
       userId: 'user-1',
       email: 'owner@company.com',
       displayName: dto.displayName,
+      avatarUrl: dto.avatarUrl,
+      preferences: {
+        timezone: 'UTC',
+        locale: 'en',
+        theme: 'dark',
+        notifications: {
+          email: true,
+          inApp: true,
+          marketing: false,
+        },
+      },
       createdAt: new Date(),
       updatedAt: new Date(),
     });
