@@ -1,13 +1,21 @@
-import { BadRequestException, HttpStatus } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Logger } from '@nestjs/common';
 import { ArgumentsHost } from '@nestjs/common/interfaces';
 import { AppException, ErrorCode } from '@common/errors';
 import { HttpExceptionFilter } from './http-exception.filter';
 
 describe('HttpExceptionFilter', () => {
   let filter: HttpExceptionFilter;
+  let loggerErrorSpy: jest.SpyInstance;
 
   beforeEach(() => {
+    loggerErrorSpy = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined);
     filter = new HttpExceptionFilter();
+  });
+
+  afterEach(() => {
+    loggerErrorSpy.mockRestore();
   });
 
   it('formats app exceptions with standard error codes', () => {
