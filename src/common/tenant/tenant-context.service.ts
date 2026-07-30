@@ -13,8 +13,11 @@ export class TenantContextService {
     return this.request as RequestWithTenantContext;
   }
 
-  setOrganizationId(organizationId: string): void {
-    this.requestWithTenant.tenantContext = { organizationId };
+  setOrganizationId(
+    organizationId: string,
+    source?: TenantContext['source'],
+  ): void {
+    this.requestWithTenant.tenantContext = { organizationId, source };
   }
 
   getOrganizationId(): string | undefined {

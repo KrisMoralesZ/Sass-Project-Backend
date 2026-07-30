@@ -3,13 +3,16 @@ import { Reflector } from '@nestjs/core';
 import { AppException, ErrorCode } from '@common/errors';
 import { OPTIONAL_ORGANIZATION_KEY } from '@common/tenant/constants/tenant-metadata.constants';
 import { ORGANIZATION_ID_HEADER } from '@common/tenant/constants/tenant.constants';
+import { TenantContextResolver } from '@common/tenant/tenant-context.resolver';
 import { TenantMembershipValidator } from '@common/tenant/tenant-membership.validator';
 import { RequestWithTenantContext } from '@common/tenant/types/request-with-tenant-context.type';
+import type { OrganizationContextSource } from '@common/tenant/constants/tenant.constants';
 
 @Injectable()
 export class TenantGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
+    private readonly tenantContextResolver: TenantContextResolver,
     private readonly tenantMembershipValidator: TenantMembershipValidator,
   ) {}
 
@@ -20,13 +23,28 @@ export class TenantGuard implements CanActivate {
     );
 
     if (isOptional) {
+      // Optional routes never accept tenant context; they are user-scoped or public.
       return true;
     }
 
     const request = context
       .switchToHttp()
       .getRequest<RequestWithTenantContext>();
-    const organizationId = request.tenantContext?.organizationId;
+
+    // Re-resolve after auth so header/user/JWT sources stay consistent.
+    const resolution = this.tenantContextResolver.resolveDetailed(request);
+    request.organizationResolution = resolution;
+
+    if (resolution.invalidCandidate) {
+      throw AppException.validationFailed(
+        `Invalid organization id from ${resolution.invalidCandidate.source}. Expected a UUID.`,
+      );
+    }
+
+    const organizationId =
+      resolution.organizationId ?? request.resolvedOrganizationId;
+    const source =
+      resolution.source ?? request.organizationResolution?.source ?? 'header';
 
     if (!organizationId) {
       throw AppException.badRequest(
@@ -40,6 +58,17 @@ export class TenantGuard implements CanActivate {
       organizationId,
     );
 
+    this.acceptTenantContext(request, organizationId, source);
+
     return true;
+  }
+
+  private acceptTenantContext(
+    request: RequestWithTenantContext,
+    organizationId: string,
+    source: OrganizationContextSource,
+  ): void {
+    request.resolvedOrganizationId = organizationId;
+    request.tenantContext = { organizationId, source };
   }
 }

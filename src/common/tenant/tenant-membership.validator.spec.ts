@@ -35,6 +35,15 @@ describe('TenantMembershipValidator', () => {
     ).resolves.toBeUndefined();
   });
 
+  it('rejects unauthenticated callers before accepting organization context', async () => {
+    await expect(
+      validator.assertMembership(undefined, 'org-1'),
+    ).rejects.toMatchObject({
+      code: ErrorCode.UNAUTHORIZED,
+    });
+    expect(organizationMembershipService.isActiveMember).not.toHaveBeenCalled();
+  });
+
   it('rejects access when the user is not a member', async () => {
     organizationMembershipService.isActiveMember.mockResolvedValue(false);
 

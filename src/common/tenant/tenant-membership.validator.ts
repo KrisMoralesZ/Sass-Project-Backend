@@ -9,12 +9,18 @@ export class TenantMembershipValidator {
     private readonly organizationMembershipService: OrganizationMembershipService,
   ) {}
 
+  /**
+   * Ensures the authenticated user is an active member of the organization
+   * before tenant context may be accepted for the request.
+   */
   async assertMembership(
     user: AuthenticatedUser | undefined,
     organizationId: string,
   ): Promise<void> {
     if (!user?.id) {
-      return;
+      throw AppException.unauthorized(
+        'Authentication is required to use organization context.',
+      );
     }
 
     const isMember = await this.organizationMembershipService.isActiveMember(

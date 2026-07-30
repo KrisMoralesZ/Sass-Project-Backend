@@ -12,6 +12,10 @@ This document defines how multi-tenancy works in the SaaS backend. **Organizatio
 
 Every request that touches tenant-owned data must carry an active organization context, and every query must filter by that `organizationId`.
 
+### v1 membership model
+
+v1 allows **multiple organization memberships per user** with **one active organization per request**. See [organization-membership-v1.md](./organization-membership-v1.md) for the formal decision and client/backend implications.
+
 ---
 
 ## Request lifecycle
@@ -20,13 +24,19 @@ Every request that touches tenant-owned data must carry an active organization c
 HTTP Request
      │
      ▼
-TenantContextMiddleware        ← resolves organizationId (user → header → JWT)
+TenantContextMiddleware        ← resolves candidate organizationId (header → user → JWT)
      │
      ▼
-TenantGuard (global)           ← requires org context unless @OptionalOrganization()
+JwtAuthGuard (global)          ← authenticates user (unless @Public())
      │
      ▼
-TenantMembershipValidator      ← verifies user belongs to org (when authenticated)
+TenantGuard (global)           ← requires org unless @OptionalOrganization()
+     │                           re-resolves candidate after auth
+     ▼
+TenantMembershipValidator      ← asserts active membership before context is accepted
+     │
+     ▼
+request.tenantContext          ← set only after membership validation succeeds
      │
      ▼
 Controller / Service
@@ -37,11 +47,26 @@ TenantScopedRepository         ← all reads/writes scoped by organizationId
 
 ### Organization context sources (priority order)
 
-1. `request.user.organizationId` — set by Auth module after JWT validation
-2. `X-Organization-Id` header — explicit workspace selection
-3. JWT `organizationId` or `orgId` claim — fallback until Auth module owns verification
+1. `X-Organization-Id` header — **preferred** explicit workspace selection for multi-org users
+2. `request.user.organizationId` — optional sticky claim set by Auth after JWT validation
+3. JWT `organizationId` or `orgId` claim — token fallback
 
-> **Rule:** Never trust a client-provided `organizationId` in the request body. Always use `TenantContextService.requireOrganizationId()`.
+Organization ids must be UUIDs. Invalid candidates fail validation before membership checks.
+
+After membership validation succeeds, the accepted value is stored only on `request.tenantContext`. Downstream code must read that accepted context via `TenantContextService` or `@CurrentOrganization()`, never raw headers or JWT claims.
+
+### Membership gate (task 2.3.2)
+
+Resolved organization ids are **candidates** until membership is verified:
+
+1. Middleware stores `resolvedOrganizationId` only (does not accept tenant context).
+2. `JwtAuthGuard` must run before `TenantGuard` so `request.user` is available.
+3. `TenantGuard` re-resolves the candidate, calls `TenantMembershipValidator.assertMembership()`, then sets `request.tenantContext`.
+4. Non-members and archived organizations receive `403 TENANT_ORGANIZATION_FORBIDDEN`.
+5. Unauthenticated calls to tenant-scoped routes receive `401` when organization context is present.
+6. `@OptionalOrganization()` routes never accept tenant context (user-scoped / public).
+
+> **Rule:** Never trust a client-provided `organizationId` in the request body. Always use `TenantContextService.requireOrganizationId()` after the guard has accepted context.
 
 ---
 
@@ -167,6 +192,7 @@ Unmarked routes require `X-Organization-Id` or a JWT with an `organizationId` cl
 - `Organization` is the tenant root entity
 - Creating an org does not require prior org context
 - Listing/switching orgs is user-scoped, not org-scoped
+- v1 supports multiple memberships per user; clients must send explicit active organization context for workspace routes ([organization-membership-v1.md](./organization-membership-v1.md))
 
 ### Projects → Boards → Issues
 - Strict hierarchy: `Organization → Project → Board → Issue`
@@ -234,7 +260,8 @@ await this.issuesRepository.scopedQueryBuilder('issue')
 
 | File | Purpose |
 |---|---|
-| `src/common/tenant/` | Context resolution, guard, middleware |
+| `src/common/tenant/` | Context resolution, guard, middleware, membership validation |
+| `src/common/tenant/tenant-membership.validator.ts` | Active membership gate before context acceptance |
 | `src/database/entities/tenant-scoped.entity.ts` | Base entity with `organizationId` |
 | `src/database/repositories/tenant-scoped.repository.ts` | Scoped CRUD operations |
 | `src/database/helpers/` | `withOrganizationScope`, `applyTenantScope` |
@@ -246,3 +273,6 @@ await this.issuesRepository.scopedQueryBuilder('issue')
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-07-13 | Initial tenant isolation rules (Phase 0.2.5) |
+| 1.1 | 2026-07-23 | Documented v1 multi-membership policy (task 2.3.1) |
+| 1.2 | 2026-07-27 | Header-first organization resolution and UUID validation (task 2.3.3) |
+| 1.2 | 2026-07-27 | Membership validation before tenant context acceptance (task 2.3.2) |
