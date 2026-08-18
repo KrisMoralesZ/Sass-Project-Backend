@@ -35,6 +35,20 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new TransformResponseInterceptor());
 
+  const corsOrigins = configService.get<string[]>('corsOrigins', [
+    'http://localhost:5173',
+  ]);
+  app.enableCors({
+    origin: corsOrigins,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Accept',
+      'Authorization',
+      'Content-Type',
+      'X-Organization-Id',
+    ],
+  });
+
   const swaggerConfig = new DocumentBuilder()
     .setTitle('SaaS Project Management API')
     .setDescription('Multi-tenant project management API (Jira/Trello-style)')
