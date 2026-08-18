@@ -19,6 +19,10 @@ export default () => ({
   apiPrefix: process.env.API_PREFIX ?? 'api',
   swaggerPath: process.env.SWAGGER_PATH ?? 'api/docs',
   appVersion: getAppVersion(),
+  corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
   auth: {
     bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS ?? '12', 10),
     jwtAccessSecret: process.env.JWT_ACCESS_SECRET,
