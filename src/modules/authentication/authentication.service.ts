@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { AppException } from '@common/errors';
+import { UsersService } from '@users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -26,6 +27,7 @@ export class AuthenticationService {
     private readonly configService: ConfigService,
     private readonly tokenService: TokenService,
     private readonly accountLockoutService: AccountLockoutService,
+    private readonly usersService: UsersService,
   ) {}
 
   async register(dto: RegisterDto): Promise<RegisterResponse> {
@@ -40,14 +42,17 @@ export class AuthenticationService {
     }
 
     const passwordHash = await this.hashPassword(dto.password);
+    const displayName = dto.displayName?.trim() ?? null;
 
     const user = this.usersRepository.create({
       email: normalizedEmail,
       passwordHash,
-      displayName: dto.displayName?.trim() ?? null,
+      displayName,
     });
 
     const savedUser = await this.usersRepository.save(user);
+    await this.usersService.createProfileForUser(savedUser.id, displayName);
+
     const tokens = await this.tokenService.generateTokens(
       savedUser.id,
       savedUser.email,

@@ -21,7 +21,8 @@
       "@database/*": ["src/database/*"],
       "@health/*": ["src/modules/health/*"],
       "@authentication/*": ["src/modules/authentication/*"],
-      "@organizations/*": ["src/modules/organizations/*"]
+      "@organizations/*": ["src/modules/organizations/*"],
+      "@users/*": ["src/modules/users/*"]
     },
     "incremental": true,
     "skipLibCheck": true,
