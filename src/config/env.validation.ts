@@ -60,6 +60,11 @@ export class EnvironmentVariables {
   @IsString()
   SWAGGER_PATH?: string;
 
+  /** Comma-separated browser origins allowed to call the API (SPA local/dev). */
+  @IsOptional()
+  @IsString()
+  CORS_ORIGINS?: string;
+
   @IsString()
   JWT_ACCESS_SECRET: string;
 
