@@ -9,6 +9,7 @@ export * from './dto/update-organization.dto';
 export * from './entities';
 export * from './enums/organization-plan.enum';
 export * from './enums/organization-role.enum';
+export * from './permissions';
 export * from './interfaces/organization-feature-flags.interface';
 export * from './interfaces/organization-member-response.interface';
 export * from './interfaces/organization-response.interface';

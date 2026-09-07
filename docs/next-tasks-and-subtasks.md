@@ -171,25 +171,43 @@ Acceptance criteria:
 
 ### Task 3.2 — Roles and permissions
 Subtasks:
-- Define base roles: OWNER, ADMIN, MEMBER, VIEWER
-- Create a permission matrix for projects, boards, issues, invites, and settings
-- Create an OrganizationMember join entity with role data
-- Add role-based guards and decorators
+
+- [x] **3.2.1** Define base roles: `OWNER`, `ADMIN`, `MEMBER`, `VIEWER` (see `docs/organization-roles-v1.md`)
+- [x] **3.2.2** Create a permission matrix for projects, boards, issues, invites, and settings (see `docs/organization-permissions-v1.md`)
+- [x] **3.2.3** Create an `OrganizationMember` join entity with role data (see `docs/database-seeds.md`)
+- [x] **3.2.4** Add role-based guards and decorators (see `docs/organization-rbac-v1.md`)
 
 Acceptance criteria:
 - Role-based access control exists for the core modules
 - The permission model is reusable across future modules
 
 ### Task 3.3 — Invitation system
+
+Implement inside the **organizations** module (same area as members). Reuse existing
+`invite:create` / `invite:read` / `invite:revoke` permissions and
+`OrganizationMembershipService.createMembership` on accept.
+
 Subtasks:
-- Create the Invitation entity
-- Add invite creation, acceptance, and revoke endpoints
-- Add token-based invitation flow
-- Add an email delivery stub for development
+
+- [ ] **3.3.1** Write invitation policy docs (`docs/organization-invitations-v1.md`): statuses (`pending` / `accepted` / `revoked` / `expired`), token rules (hash at rest, TTL), assignable roles, accept flow
+- [ ] **3.3.2** Create the `Invitation` entity (`organizationId`, `email`, `role`, `tokenHash`, `status`, `invitedByUserId`, `expiresAt`) and register it with TypeORM / `OrganizationsModule`
+- [ ] **3.3.3** Add create / list / accept DTOs and response interface; validate assignable roles only (default `MEMBER`)
+- [ ] **3.3.4** Add a development email delivery stub that logs the invite URL (no real SMTP provider yet)
+- [ ] **3.3.5** Add invite **create** + **list** endpoints with `@RequirePermissions(INVITE_CREATE | INVITE_READ)`; reject duplicate pending invites and existing members
+- [ ] **3.3.6** Add invite **revoke** endpoint with `@RequirePermissions(INVITE_REVOKE)` (idempotent for already-revoked / expired)
+- [ ] **3.3.7** Add token-based **accept** endpoint (authenticated user + token); validate status/expiry/email; create membership via `createMembership`; mark invite accepted
+- [ ] **3.3.8** Add service/controller tests (RBAC, expiry, revoke, duplicate member, role assignment); optional seed pending invite for local QA
+
+**3.3 out of scope** (land in **3.4** instead):
+
+- Role update and member removal endpoints
+- Last-owner protection rules
 
 Acceptance criteria:
-- Owners can invite new members to the organization
+- Owners/admins can invite new members to the organization
 - Invited users can accept the invitation and join the workspace
+- Pending invites can be listed and revoked by permitted roles
+- Invite email is stubbed for local development (logged URL)
 
 ### Task 3.4 — Member management
 Subtasks:

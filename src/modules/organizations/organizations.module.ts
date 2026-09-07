@@ -5,12 +5,22 @@ import { Organization } from './entities/organization.entity';
 import { OrganizationMembersController } from './organization-members.controller';
 import { OrganizationsController } from './organizations.controller';
 import { OrganizationsService } from './organizations.service';
+import { PermissionsGuard } from './rbac/guards/permissions.guard';
 import { OrganizationMembershipService } from './services/organization-membership.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Organization, OrganizationMember])],
   controllers: [OrganizationsController, OrganizationMembersController],
-  providers: [OrganizationsService, OrganizationMembershipService],
-  exports: [OrganizationsService, OrganizationMembershipService, TypeOrmModule],
+  providers: [
+    OrganizationsService,
+    OrganizationMembershipService,
+    PermissionsGuard,
+  ],
+  exports: [
+    OrganizationsService,
+    OrganizationMembershipService,
+    PermissionsGuard,
+    TypeOrmModule,
+  ],
 })
 export class OrganizationsModule {}

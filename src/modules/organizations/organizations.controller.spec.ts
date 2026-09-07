@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OrganizationsController } from './organizations.controller';
 import { OrganizationsService } from './organizations.service';
 import { OrganizationPlan } from './enums/organization-plan.enum';
+import { OrganizationMembershipService } from './services/organization-membership.service';
 
 describe('OrganizationsController', () => {
   let controller: OrganizationsController;
@@ -27,6 +28,12 @@ describe('OrganizationsController', () => {
         {
           provide: OrganizationsService,
           useValue: organizationsService,
+        },
+        {
+          provide: OrganizationMembershipService,
+          useValue: {
+            getActiveMembership: jest.fn(),
+          },
         },
       ],
     }).compile();

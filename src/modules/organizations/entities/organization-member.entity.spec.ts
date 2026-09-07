@@ -1,7 +1,11 @@
 import 'reflect-metadata';
 import { getMetadataArgsStorage } from 'typeorm';
 import { TenantScopedEntity } from '@database/entities/tenant-scoped.entity';
-import { OrganizationRole } from '@organizations/enums/organization-role.enum';
+import {
+  DEFAULT_ORGANIZATION_ROLE,
+  ORGANIZATION_ROLES,
+  OrganizationRole,
+} from '@organizations/enums/organization-role.enum';
 import { OrganizationMember } from './organization-member.entity';
 
 describe('OrganizationMember', () => {
@@ -25,12 +29,23 @@ describe('OrganizationMember', () => {
     expect(indices).toContainEqual(['organizationId', 'userId']);
   });
 
-  it('defaults the role to MEMBER', () => {
+  it('stores OrganizationRole enum values on the role column', () => {
     const roleColumn = getMetadataArgsStorage().columns.find(
       (column) =>
         column.target === OrganizationMember && column.propertyName === 'role',
     );
 
-    expect(roleColumn?.options.default).toBe(OrganizationRole.MEMBER);
+    expect(roleColumn?.options.type).toBe('enum');
+    expect(roleColumn?.options.enum).toBe(OrganizationRole);
+    expect(roleColumn?.options.default).toBe(DEFAULT_ORGANIZATION_ROLE);
+    expect(Object.values(OrganizationRole)).toEqual([...ORGANIZATION_ROLES]);
+  });
+
+  it('links user and organization relations', () => {
+    const relations = getMetadataArgsStorage()
+      .relations.filter((relation) => relation.target === OrganizationMember)
+      .map((relation) => relation.propertyName);
+
+    expect(relations).toEqual(expect.arrayContaining(['user', 'organization']));
   });
 });

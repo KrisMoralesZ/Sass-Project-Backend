@@ -140,10 +140,22 @@ describe('OrganizationMembershipService', () => {
   });
 
   it('returns false when membership exists only for an archived organization', async () => {
-    queryBuilder.getCount.mockResolvedValue(0);
+    queryBuilder.getOne.mockResolvedValue(null);
 
     await expect(service.isActiveMember('user-1', 'org-1')).resolves.toBe(
       false,
+    );
+  });
+
+  it('returns the active membership with role data', async () => {
+    queryBuilder.getOne.mockResolvedValue(membership);
+
+    await expect(
+      service.getActiveMembership('user-1', 'org-1'),
+    ).resolves.toEqual(membership);
+    expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+      'member.organizationId = :organizationId',
+      { organizationId: 'org-1' },
     );
   });
 
