@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppConfigModule } from '@config/app-config.module';
+import { UsersModule } from '@users/users.module';
 import { AuthenticationController } from './authentication.controller';
 import { AuthenticationService } from './authentication.service';
 import { RefreshToken } from './entities/refresh-token.entity';
@@ -26,6 +27,7 @@ import { TokenService } from './token.service';
         secret: configService.get<string>('auth.jwtAccessSecret'),
       }),
     }),
+    UsersModule,
   ],
   controllers: [AuthenticationController],
   providers: [
@@ -38,6 +40,6 @@ import { TokenService } from './token.service';
       useClass: JwtAuthGuard,
     },
   ],
-  exports: [AuthenticationService, TokenService, JwtModule],
+  exports: [AuthenticationService, TokenService, JwtModule, TypeOrmModule],
 })
 export class AuthenticationModule {}

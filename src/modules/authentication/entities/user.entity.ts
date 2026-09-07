@@ -1,5 +1,6 @@
 import { OrganizationMember } from '@organizations/entities/organization-member.entity';
-import { Column, Entity, Index, OneToMany } from 'typeorm';
+import { UserProfile } from '@users/entities/user-profile.entity';
+import { Column, Entity, Index, OneToMany, OneToOne } from 'typeorm';
 import { BaseEntity } from '@database/entities/base.entity';
 
 @Entity('users')
@@ -22,4 +23,7 @@ export class User extends BaseEntity {
 
   @OneToMany(() => OrganizationMember, (membership) => membership.user)
   memberships!: OrganizationMember[];
+
+  @OneToOne(() => UserProfile, (profile) => profile.user)
+  profile?: UserProfile;
 }

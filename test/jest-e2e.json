@@ -14,6 +14,7 @@
     "^@database/(.*)$": "<rootDir>/../src/database/$1",
     "^@health/(.*)$": "<rootDir>/../src/modules/health/$1",
     "^@authentication/(.*)$": "<rootDir>/../src/modules/authentication/$1",
-    "^@organizations/(.*)$": "<rootDir>/../src/modules/organizations/$1"
+    "^@organizations/(.*)$": "<rootDir>/../src/modules/organizations/$1",
+    "^@users/(.*)$": "<rootDir>/../src/modules/users/$1"
   }
 }
