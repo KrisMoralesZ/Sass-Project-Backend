@@ -187,9 +187,12 @@ Implement inside the **organizations** module (same area as members). Reuse exis
 `invite:create` / `invite:read` / `invite:revoke` permissions and
 `OrganizationMembershipService.createMembership` on accept.
 
+Take this **alongside frontend task 3.4** (invite UI): land each endpoint slice
+with the matching screen, not as a backend-only pass followed by UI later.
+
 Subtasks:
 
-- [ ] **3.3.1** Write invitation policy docs (`docs/organization-invitations-v1.md`): statuses (`pending` / `accepted` / `revoked` / `expired`), token rules (hash at rest, TTL), assignable roles, accept flow
+- [x] **3.3.1** Write invitation policy docs (`docs/organization-invitations-v1.md`): statuses (`pending` / `accepted` / `revoked` / `expired`), token rules (hash at rest, TTL), assignable roles, accept flow
 - [ ] **3.3.2** Create the `Invitation` entity (`organizationId`, `email`, `role`, `tokenHash`, `status`, `invitedByUserId`, `expiresAt`) and register it with TypeORM / `OrganizationsModule`
 - [ ] **3.3.3** Add create / list / accept DTOs and response interface; validate assignable roles only (default `MEMBER`)
 - [ ] **3.3.4** Add a development email delivery stub that logs the invite URL (no real SMTP provider yet)
@@ -210,6 +213,9 @@ Acceptance criteria:
 - Invite email is stubbed for local development (logged URL)
 
 ### Task 3.4 — Member management
+
+Take this **alongside frontend task 3.5** (role change / remove-member UI).
+
 Subtasks:
 - Add role update endpoints
 - Add member removal endpoints
