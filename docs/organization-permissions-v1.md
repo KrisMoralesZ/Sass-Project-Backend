@@ -75,6 +75,7 @@ See [organization-rbac-v1.md](./organization-rbac-v1.md) for guards and decorato
 | `src/modules/organizations/rbac/` | Guards and decorators (task 3.2.4) |
 | `docs/organization-roles-v1.md` | Base roles |
 | `docs/organization-rbac-v1.md` | Route-level RBAC |
+| `docs/organization-invitations-v1.md` | Invite create/list/revoke/accept policy |
 
 ## Out of scope for 3.2.2
 
@@ -87,3 +88,4 @@ See [organization-rbac-v1.md](./organization-rbac-v1.md) for guards and decorato
 |---|---|---|
 | 1.0 | 2026-07-27 | Initial matrix for projects, boards, issues, invites, settings |
 | 1.1 | 2026-07-27 | Linked RBAC guards documentation (task 3.2.4) |
+| 1.2 | 2026-09-03 | Linked invitation policy (task 3.3.1) |

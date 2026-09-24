@@ -4,6 +4,7 @@ import { join } from 'path';
 import { DataSource } from 'typeorm';
 import { User } from '../modules/authentication/entities/user.entity';
 import { RefreshToken } from '../modules/authentication/entities/refresh-token.entity';
+import { Invitation } from '../modules/organizations/entities/invitation.entity';
 import { Organization } from '../modules/organizations/entities/organization.entity';
 import { OrganizationMember } from '../modules/organizations/entities/organization-member.entity';
 import { UserProfile } from '../modules/users/entities/user-profile.entity';
@@ -24,7 +25,14 @@ export const AppDataSource = new DataSource({
   ssl:
     process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
   synchronize: process.env.DATABASE_SYNCHRONIZE === 'true',
-  entities: [User, RefreshToken, Organization, OrganizationMember, UserProfile],
+  entities: [
+    User,
+    RefreshToken,
+    Organization,
+    OrganizationMember,
+    Invitation,
+    UserProfile,
+  ],
 });
 
 export default AppDataSource;

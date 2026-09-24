@@ -31,7 +31,7 @@ Use `hasAtLeastOrganizationRole(role, minimumRole)` when a feature needs “Admi
 | Invite accepted / member joined without explicit role | `MEMBER` (default) |
 | Role updated by an authorized actor | Any of the four base roles |
 
-All four roles are assignable in v1. Preventing removal of the last owner is handled in member-management (task 3.4).
+All four roles are assignable in v1 (including via invite). Preventing removal of the last owner is handled in member-management (task 3.4). Invitation token, TTL, and accept rules: [organization-invitations-v1.md](./organization-invitations-v1.md).
 
 ## Code reference
 
@@ -41,6 +41,7 @@ All four roles are assignable in v1. Preventing removal of the last owner is han
 | `src/modules/organizations/entities/organization-member.entity.ts` | Join entity with `role` (task 3.2.3) |
 | `src/database/seeds/` | Dev seeds creating one member per base role |
 | `docs/organization-membership-v1.md` | Multi-org membership policy |
+| `docs/organization-invitations-v1.md` | Invitation statuses, tokens, accept flow |
 | `docs/database-seeds.md` | How to run membership/role seeds |
 
 ## Task 3.2.3 status
@@ -68,3 +69,4 @@ Role guards and decorators: [organization-rbac-v1.md](./organization-rbac-v1.md)
 | 1.1 | 2026-07-27 | Linked permission matrix documentation (task 3.2.2) |
 | 1.2 | 2026-07-27 | Confirmed OrganizationMember role join + DB seeds (task 3.2.3) |
 | 1.3 | 2026-07-27 | Linked RBAC guards documentation (task 3.2.4) |
+| 1.4 | 2026-09-03 | Linked invitation policy (task 3.3.1) |
