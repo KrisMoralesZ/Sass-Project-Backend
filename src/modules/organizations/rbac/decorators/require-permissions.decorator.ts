@@ -6,9 +6,7 @@ import { PermissionsGuard } from '../guards/permissions.guard';
 /**
  * Requires the caller’s organization role to include every listed permission.
  */
-export const RequirePermissions = (
-  ...permissions: OrganizationPermission[]
-) =>
+export const RequirePermissions = (...permissions: OrganizationPermission[]) =>
   applyDecorators(
     SetMetadata(REQUIRED_PERMISSIONS_KEY, permissions),
     UseGuards(PermissionsGuard),
