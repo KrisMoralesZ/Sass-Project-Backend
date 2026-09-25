@@ -7,4 +7,3 @@ export const AUTH_THROTTLE_PATHS = [
   '/auth/refresh',
   '/auth/logout',
 ] as const;
-
