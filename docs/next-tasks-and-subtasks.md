@@ -195,7 +195,7 @@ Subtasks:
 - [x] **3.3.1** Write invitation policy docs (`docs/organization-invitations-v1.md`): statuses (`pending` / `accepted` / `revoked` / `expired`), token rules (hash at rest, TTL), assignable roles, accept flow
 - [x] **3.3.2** Create the `Invitation` entity (`organizationId`, `email`, `role`, `tokenHash`, `status`, `invitedByUserId`, `expiresAt`) and register it with TypeORM / `OrganizationsModule`
 - [x] **3.3.3** Add create / list / accept DTOs and response interface; validate assignable roles only (default `MEMBER`)
-- [ ] **3.3.4** Add a development email delivery stub that logs the invite URL (no real SMTP provider yet)
+- [x] **3.3.4** Add a development email delivery stub that logs the invite URL (no real SMTP provider yet)
 - [ ] **3.3.5** Add invite **create** + **list** endpoints with `@RequirePermissions(INVITE_CREATE | INVITE_READ)`; reject duplicate pending invites and existing members
 - [ ] **3.3.6** Add invite **revoke** endpoint with `@RequirePermissions(INVITE_REVOKE)` (idempotent for already-revoked / expired)
 - [ ] **3.3.7** Add token-based **accept** endpoint (authenticated user + token); validate status/expiry/email; create membership via `createMembership`; mark invite accepted
