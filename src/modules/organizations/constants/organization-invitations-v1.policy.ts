@@ -5,11 +5,16 @@ import { OrganizationRole } from '@organizations/enums/organization-role.enum';
  *
  * @see ../../../../docs/organization-invitations-v1.md
  */
+export const INVITATION_PENDING_STATUS = 'pending';
+export const INVITATION_ACCEPTED_STATUS = 'accepted';
+export const INVITATION_REVOKED_STATUS = 'revoked';
+export const INVITATION_EXPIRED_STATUS = 'expired';
+
 export const INVITATION_STATUSES = [
-  'pending',
-  'accepted',
-  'revoked',
-  'expired',
+  INVITATION_PENDING_STATUS,
+  INVITATION_ACCEPTED_STATUS,
+  INVITATION_REVOKED_STATUS,
+  INVITATION_EXPIRED_STATUS,
 ] as const;
 
 export type InvitationStatus = (typeof INVITATION_STATUSES)[number];

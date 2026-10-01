@@ -186,3 +186,4 @@ Swapping in a real transport means replacing that provider in `OrganizationsModu
 |---|---|---|
 | 1.0 | 2026-09-03 | v1 invitation policy: statuses, hashed tokens, 7-day TTL, assignable roles, accept flow (task 3.3.1) |
 | 1.1 | 2026-09-30 | Create and list endpoints landed (task 3.3.5): token/email utils added to the code reference |
+| 1.2 | 2026-09-30 | Revoke endpoint landed (task 3.3.6): named status constants exported from the policy module |

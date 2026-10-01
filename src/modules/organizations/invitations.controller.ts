@@ -4,6 +4,8 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
   Post,
   Query,
 } from '@nestjs/common';
@@ -56,6 +58,26 @@ export class InvitationsController {
       user.id,
       createInvitationDto,
     );
+  }
+
+  @Post(':id/revoke')
+  @RequirePermissions(OrganizationPermission.INVITE_REVOKE)
+  @ApiOperation({ summary: 'Revoke a pending invitation' })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Invitation revoked. Already revoked or expired invitations return unchanged.',
+  })
+  @ApiResponse({ status: 400, description: 'Organization context is required' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Missing invite:revoke permission' })
+  @ApiResponse({ status: 404, description: 'Invitation not found' })
+  @ApiResponse({ status: 409, description: 'Invitation already accepted' })
+  revoke(
+    @CurrentOrganization({ required: true }) organizationId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.invitationsService.revokeInvitation(organizationId, id);
   }
 
   @Get()

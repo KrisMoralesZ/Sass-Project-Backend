@@ -9,8 +9,11 @@ import {
 } from '@common/utils/pagination.util';
 import {
   getInvitationExpiresAt,
+  INVITATION_ACCEPTED_STATUS,
   INVITATION_DEFAULT_ROLE,
-  INVITATION_STATUSES,
+  INVITATION_EXPIRED_STATUS,
+  INVITATION_PENDING_STATUS,
+  INVITATION_REVOKED_STATUS,
   type InvitationStatus,
 } from '@organizations/constants/organization-invitations-v1.policy';
 import {
@@ -27,8 +30,6 @@ import { Invitation } from '../entities/invitation.entity';
 import { InvitationResponse } from '../interfaces/invitation-response.interface';
 import { DevelopmentInvitationMailer } from './development-invitation-mailer.service';
 import { OrganizationMembershipService } from './organization-membership.service';
-
-const PENDING_INVITATION_STATUS = INVITATION_STATUSES[0];
 
 @Injectable()
 export class InvitationsService {
@@ -64,7 +65,7 @@ export class InvitationsService {
         email,
         role,
         tokenHash: hashInvitationToken(token),
-        status: PENDING_INVITATION_STATUS,
+        status: INVITATION_PENDING_STATUS,
         invitedByUserId,
         expiresAt,
       }),
@@ -93,7 +94,7 @@ export class InvitationsService {
   ) {
     const where: FindOptionsWhere<Invitation> = {
       organizationId,
-      status: query.status ?? PENDING_INVITATION_STATUS,
+      status: query.status ?? INVITATION_PENDING_STATUS,
     };
 
     const [items, total] = await this.invitationsRepository.findAndCount({
@@ -109,6 +110,42 @@ export class InvitationsService {
       total,
       query,
     );
+  }
+
+  /**
+   * `POST /invites/:id/revoke` — tenant-scoped; requires `invite:revoke`
+   * (controller guard).
+   *
+   * Idempotent for invites that are already `revoked` or past their TTL.
+   * `accepted` is terminal: the invitee already holds a membership, so revoking
+   * is a conflict rather than a no-op.
+   */
+  async revokeInvitation(
+    organizationId: string,
+    invitationId: string,
+  ): Promise<InvitationResponse> {
+    const invitation = await this.invitationsRepository.findOne({
+      where: { id: invitationId, organizationId },
+    });
+
+    if (!invitation) {
+      throw AppException.notFound('Invitation not found');
+    }
+
+    if (invitation.status === INVITATION_ACCEPTED_STATUS) {
+      throw AppException.conflict(
+        'This invitation has already been accepted and cannot be revoked',
+      );
+    }
+
+    if (this.resolveStatus(invitation) !== INVITATION_PENDING_STATUS) {
+      return this.toResponse(invitation);
+    }
+
+    invitation.status = INVITATION_REVOKED_STATUS;
+    const revokedInvitation = await this.invitationsRepository.save(invitation);
+
+    return this.toResponse(revokedInvitation);
   }
 
   /**
@@ -152,7 +189,7 @@ export class InvitationsService {
       .where('invitation.organizationId = :organizationId', { organizationId })
       .andWhere('invitation.email = :email', { email })
       .andWhere('invitation.status = :status', {
-        status: PENDING_INVITATION_STATUS,
+        status: INVITATION_PENDING_STATUS,
       })
       .andWhere('invitation.expiresAt > :now', { now: new Date() })
       .getOne();
@@ -164,10 +201,10 @@ export class InvitationsService {
    */
   private resolveStatus(invitation: Invitation): InvitationStatus {
     if (
-      invitation.status === PENDING_INVITATION_STATUS &&
+      invitation.status === INVITATION_PENDING_STATUS &&
       invitation.expiresAt.getTime() <= Date.now()
     ) {
-      return 'expired';
+      return INVITATION_EXPIRED_STATUS;
     }
 
     return invitation.status;

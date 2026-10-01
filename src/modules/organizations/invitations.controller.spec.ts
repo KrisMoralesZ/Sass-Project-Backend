@@ -9,13 +9,17 @@ import { OrganizationMembershipService } from './services/organization-membershi
 describe('InvitationsController', () => {
   let controller: InvitationsController;
   let invitationsService: jest.Mocked<
-    Pick<InvitationsService, 'createInvitation' | 'listInvitations'>
+    Pick<
+      InvitationsService,
+      'createInvitation' | 'listInvitations' | 'revokeInvitation'
+    >
   >;
 
   beforeEach(async () => {
     invitationsService = {
       createInvitation: jest.fn(),
       listInvitations: jest.fn(),
+      revokeInvitation: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -54,6 +58,22 @@ describe('InvitationsController', () => {
       'org-1',
       'user-1',
       dto,
+    );
+  });
+
+  it('delegates revocation to the invitations service', async () => {
+    invitationsService.revokeInvitation.mockResolvedValue({
+      id: 'invite-1',
+      organizationId: 'org-1',
+      email: 'jane@example.com',
+      status: 'revoked',
+    } as never);
+
+    await controller.revoke('org-1', 'invite-1');
+
+    expect(invitationsService.revokeInvitation).toHaveBeenCalledWith(
+      'org-1',
+      'invite-1',
     );
   });
 

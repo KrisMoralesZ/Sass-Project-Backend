@@ -23,6 +23,7 @@ describe('InvitationsService', () => {
   let invitationsRepository: {
     create: jest.Mock<Invitation, [Partial<Invitation>]>;
     save: jest.Mock<Promise<Invitation>, [Invitation]>;
+    findOne: jest.Mock<Invitation | null, [unknown]>;
     findAndCount: jest.Mock;
     createQueryBuilder: jest.Mock;
   };
@@ -71,6 +72,9 @@ describe('InvitationsService', () => {
             updatedAt: new Date('2026-01-15T00:00:00.000Z'),
           }),
         ),
+      ),
+      findOne: jest.fn<Promise<Invitation | null>, [unknown]>(() =>
+        Promise.resolve(null),
       ),
       findAndCount: jest.fn(),
       createQueryBuilder: jest.fn(
@@ -212,6 +216,62 @@ describe('InvitationsService', () => {
       { status: 'pending' },
     );
     expect(invitationsRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('revokes a pending invitation', async () => {
+    invitationsRepository.findOne.mockResolvedValue(createInvitation());
+
+    const result = await service.revokeInvitation('org-1', 'invite-1');
+
+    expect(invitationsRepository.findOne).toHaveBeenCalledWith({
+      where: { id: 'invite-1', organizationId: 'org-1' },
+    });
+    expect(invitationsRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'invite-1', status: 'revoked' }),
+    );
+    expect(result.status).toBe('revoked');
+  });
+
+  it('is idempotent for an already revoked invitation', async () => {
+    invitationsRepository.findOne.mockResolvedValue(
+      createInvitation({ status: 'revoked' }),
+    );
+
+    const result = await service.revokeInvitation('org-1', 'invite-1');
+
+    expect(result.status).toBe('revoked');
+    expect(invitationsRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('is idempotent for an expired pending invitation', async () => {
+    invitationsRepository.findOne.mockResolvedValue(
+      createInvitation({ expiresAt: new Date(Date.now() - 1000) }),
+    );
+
+    const result = await service.revokeInvitation('org-1', 'invite-1');
+
+    expect(result.status).toBe('expired');
+    expect(invitationsRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('refuses to revoke an accepted invitation', async () => {
+    invitationsRepository.findOne.mockResolvedValue(
+      createInvitation({ status: 'accepted' }),
+    );
+
+    await expect(
+      service.revokeInvitation('org-1', 'invite-1'),
+    ).rejects.toMatchObject({ code: ErrorCode.CONFLICT });
+
+    expect(invitationsRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('throws not found for an invitation outside the active organization', async () => {
+    invitationsRepository.findOne.mockResolvedValue(null);
+
+    await expect(
+      service.revokeInvitation('org-1', 'missing'),
+    ).rejects.toMatchObject({ code: ErrorCode.RESOURCE_NOT_FOUND });
   });
 
   it('lists pending invitations by default', async () => {
