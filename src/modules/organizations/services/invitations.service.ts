@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { SortOrder } from '@common/enums/sort-order.enum';
-import { AppException } from '@common/errors';
+import { AppException, ErrorCode } from '@common/errors';
+import type { AuthenticatedUser } from '@common/tenant/interfaces/tenant-context.interface';
 import {
   buildFindManyOptions,
   createPaginatedResult,
@@ -16,6 +17,7 @@ import {
   INVITATION_REVOKED_STATUS,
   type InvitationStatus,
 } from '@organizations/constants/organization-invitations-v1.policy';
+import { AcceptInvitationDto } from '@organizations/dto/accept-invitation.dto';
 import {
   INVITATION_SORT_FIELDS,
   ListInvitationsQueryDto,
@@ -27,6 +29,8 @@ import {
 } from '@organizations/utils/invitation-token.util';
 import { CreateInvitationDto } from '../dto/create-invitation.dto';
 import { Invitation } from '../entities/invitation.entity';
+import { Organization } from '../entities/organization.entity';
+import { AcceptInvitationResponse } from '../interfaces/accept-invitation-response.interface';
 import { InvitationResponse } from '../interfaces/invitation-response.interface';
 import { DevelopmentInvitationMailer } from './development-invitation-mailer.service';
 import { OrganizationMembershipService } from './organization-membership.service';
@@ -36,6 +40,8 @@ export class InvitationsService {
   constructor(
     @InjectRepository(Invitation)
     private readonly invitationsRepository: Repository<Invitation>,
+    @InjectRepository(Organization)
+    private readonly organizationsRepository: Repository<Organization>,
     private readonly organizationMembershipService: OrganizationMembershipService,
     private readonly invitationMailer: DevelopmentInvitationMailer,
   ) {}
@@ -149,6 +155,94 @@ export class InvitationsService {
   }
 
   /**
+   * `POST /invites/accept` — authenticated but **not** tenant-scoped: the invitee is
+   * not a member yet, so the organization is resolved from the invitation itself
+   * and no `invite:*` permission applies.
+   *
+   * Accept is idempotent for an invite the same user already consumed: it returns
+   * the existing membership instead of creating a second one.
+   */
+  async acceptInvitation(
+    user: AuthenticatedUser,
+    dto: AcceptInvitationDto,
+  ): Promise<AcceptInvitationResponse> {
+    const userEmail = user.email
+      ? normalizeInvitationEmail(user.email)
+      : undefined;
+
+    if (!userEmail) {
+      throw AppException.unauthorized('Authentication is required');
+    }
+
+    const invitation = await this.findInvitationByToken(
+      hashInvitationToken(dto.token),
+    );
+
+    if (!invitation) {
+      throw AppException.notFound('Invitation not found');
+    }
+
+    const status = this.resolveStatus(invitation);
+
+    if (status === INVITATION_EXPIRED_STATUS) {
+      throw AppException.badRequest(
+        ErrorCode.BAD_REQUEST,
+        'This invitation has expired. Ask for a new invitation.',
+      );
+    }
+
+    if (status === INVITATION_REVOKED_STATUS) {
+      throw AppException.badRequest(
+        ErrorCode.BAD_REQUEST,
+        'This invitation has been revoked',
+      );
+    }
+
+    if (invitation.email !== userEmail) {
+      throw AppException.forbidden(
+        ErrorCode.FORBIDDEN,
+        'This invitation was issued to a different email address',
+      );
+    }
+
+    const isAlreadyMember =
+      await this.organizationMembershipService.isActiveMember(
+        user.id,
+        invitation.organizationId,
+      );
+
+    if (status === INVITATION_ACCEPTED_STATUS) {
+      if (!isAlreadyMember) {
+        throw AppException.conflict(
+          'This invitation has already been accepted',
+        );
+      }
+
+      return this.toAcceptResponse(invitation, user.id);
+    }
+
+    if (isAlreadyMember) {
+      throw AppException.conflict(
+        'You are already a member of this organization',
+      );
+    }
+
+    await this.assertOrganizationIsActive(invitation.organizationId);
+
+    await this.organizationMembershipService.createMembership(
+      invitation.organizationId,
+      user.id,
+      invitation.role,
+    );
+
+    invitation.status = INVITATION_ACCEPTED_STATUS;
+    const acceptedInvitation =
+      await this.invitationsRepository.save(invitation);
+
+    return this.toAcceptResponse(acceptedInvitation, user.id);
+  }
+
+  /**
    * One pending invite per `(organizationId, email)`, and never for an active
    * member. Derived-expired invites do not block a new invite.
    */
@@ -208,6 +302,45 @@ export class InvitationsService {
     }
 
     return invitation.status;
+  }
+
+  private findInvitationByToken(tokenHash: string): Promise<Invitation | null> {
+    return this.invitationsRepository.findOne({ where: { tokenHash } });
+  }
+
+  private async assertOrganizationIsActive(
+    organizationId: string,
+  ): Promise<void> {
+    const organization = await this.organizationsRepository.findOne({
+      where: { id: organizationId },
+      withDeleted: true,
+    });
+
+    if (!organization) {
+      throw AppException.notFound('Organization not found');
+    }
+
+    if (organization.deletedAt) {
+      throw AppException.forbidden(
+        ErrorCode.TENANT_ORGANIZATION_FORBIDDEN,
+        'This organization is archived',
+      );
+    }
+  }
+
+  private async toAcceptResponse(
+    invitation: Invitation,
+    userId: string,
+  ): Promise<AcceptInvitationResponse> {
+    const membership = await this.organizationMembershipService.getMember(
+      invitation.organizationId,
+      userId,
+    );
+
+    return {
+      invitation: this.toResponse(invitation),
+      membership,
+    };
   }
 
   private toResponse(invitation: Invitation): InvitationResponse {

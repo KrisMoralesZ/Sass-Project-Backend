@@ -17,7 +17,13 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { CurrentUser } from '@authentication/decorators/current-user.decorator';
-import { CurrentOrganization, ORGANIZATION_ID_HEADER } from '@common/tenant';
+import type { AuthenticatedUser } from '@common/tenant/interfaces/tenant-context.interface';
+import {
+  CurrentOrganization,
+  OptionalOrganization,
+  ORGANIZATION_ID_HEADER,
+} from '@common/tenant';
+import { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
 import { ListInvitationsQueryDto } from './dto/list-invitations-query.dto';
 import { OrganizationPermission } from './permissions/organization-permission.enum';
@@ -58,6 +64,40 @@ export class InvitationsController {
       user.id,
       createInvitationDto,
     );
+  }
+
+  @Post('accept')
+  @HttpCode(HttpStatus.OK)
+  @OptionalOrganization()
+  @ApiHeader({
+    name: ORGANIZATION_ID_HEADER,
+    required: false,
+    description:
+      'Not required: the organization comes from the invitation, not from tenant context',
+  })
+  @ApiOperation({ summary: 'Accept an invitation and join its organization' })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Invitation accepted. The response carries the new membership; an already accepted invitation returns the same membership.',
+  })
+  @ApiResponse({ status: 400, description: 'Invitation expired or revoked' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Invitation belongs to a different email, or the organization is archived',
+  })
+  @ApiResponse({ status: 404, description: 'Invitation not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'Already a member, or the invitation was already accepted',
+  })
+  accept(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() acceptInvitationDto: AcceptInvitationDto,
+  ) {
+    return this.invitationsService.acceptInvitation(user, acceptInvitationDto);
   }
 
   @Post(':id/revoke')

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { plainToInstance } from 'class-transformer';
+import { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
 import { ListInvitationsQueryDto } from './dto/list-invitations-query.dto';
 import { InvitationsController } from './invitations.controller';
@@ -11,12 +12,16 @@ describe('InvitationsController', () => {
   let invitationsService: jest.Mocked<
     Pick<
       InvitationsService,
-      'createInvitation' | 'listInvitations' | 'revokeInvitation'
+      | 'acceptInvitation'
+      | 'createInvitation'
+      | 'listInvitations'
+      | 'revokeInvitation'
     >
   >;
 
   beforeEach(async () => {
     invitationsService = {
+      acceptInvitation: jest.fn(),
       createInvitation: jest.fn(),
       listInvitations: jest.fn(),
       revokeInvitation: jest.fn(),
@@ -75,6 +80,21 @@ describe('InvitationsController', () => {
       'org-1',
       'invite-1',
     );
+  });
+
+  it('delegates acceptance to the invitations service', async () => {
+    const dto = plainToInstance(AcceptInvitationDto, {
+      token: 'raw-token-value-for-accept',
+    });
+    const user = { id: 'user-2', email: 'jane@example.com' };
+    invitationsService.acceptInvitation.mockResolvedValue({
+      invitation: { id: 'invite-1', status: 'accepted' },
+      membership: { id: 'member-1', organizationId: 'org-1' },
+    } as never);
+
+    await controller.accept(user, dto);
+
+    expect(invitationsService.acceptInvitation).toHaveBeenCalledWith(user, dto);
   });
 
   it('delegates list to the invitations service', async () => {
