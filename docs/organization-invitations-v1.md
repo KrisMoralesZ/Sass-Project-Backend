@@ -169,6 +169,8 @@ Swapping in a real transport means replacing that provider in `OrganizationsModu
 | Artifact | Purpose |
 |---|---|
 | `src/modules/organizations/constants/organization-invitations-v1.policy.ts` | Statuses, TTL, hashing rule, assignable roles |
+| `src/modules/organizations/utils/invitation-token.util.ts` | Raw token generation and SHA-256 hashing |
+| `src/modules/organizations/utils/invitation-email.util.ts` | Invitee email normalization |
 | `src/modules/organizations/enums/organization-role.enum.ts` | `DEFAULT_ORGANIZATION_ROLE` (`MEMBER`) |
 | `src/modules/organizations/permissions/organization-permission.enum.ts` | `invite:create` / `invite:read` / `invite:revoke` |
 | `src/modules/organizations/services/development-invitation-mailer.service.ts` | Email delivery stub that logs the accept URL |
@@ -183,3 +185,4 @@ Swapping in a real transport means replacing that provider in `OrganizationsModu
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-09-03 | v1 invitation policy: statuses, hashed tokens, 7-day TTL, assignable roles, accept flow (task 3.3.1) |
+| 1.1 | 2026-09-30 | Create and list endpoints landed (task 3.3.5): token/email utils added to the code reference |
