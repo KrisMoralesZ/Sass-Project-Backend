@@ -19,6 +19,16 @@ export interface SeedOrganizationDefinition {
   plan: OrganizationPlan;
 }
 
+export interface SeedInvitationDefinition {
+  email: string;
+  role: OrganizationRole;
+  /**
+   * Fixed raw token so local QA can open the accept URL without email.
+   * Development only: it is hashed before storage, exactly like the API does.
+   */
+  token: string;
+}
+
 /**
  * Demo organization used by membership seeds (task 3.2.3).
  */
@@ -53,3 +63,15 @@ export const SEED_USERS: SeedUserDefinition[] = [
     role: OrganizationRole.VIEWER,
   },
 ];
+
+/**
+ * Pending invitation for local QA of the invite + accept flow (task 3.3.8).
+ *
+ * The invitee is deliberately not a seed user: register (or sign up) with this
+ * email and open the printed accept URL to join Acme Workspace.
+ */
+export const SEED_INVITATION: SeedInvitationDefinition = {
+  email: 'invitee@acme.local',
+  role: OrganizationRole.MEMBER,
+  token: 'seed-invite-token-for-local-qa-0001',
+};
