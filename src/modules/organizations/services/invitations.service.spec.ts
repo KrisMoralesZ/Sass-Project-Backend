@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
-import { SelectQueryBuilder } from 'typeorm';
+import { FindOneOptions, SelectQueryBuilder } from 'typeorm';
 import { ErrorCode } from '@common/errors/error-code.enum';
 import { INVITATION_TTL_MS } from '../constants/organization-invitations-v1.policy';
 import { AcceptInvitationDto } from '../dto/accept-invitation.dto';
@@ -26,22 +26,39 @@ function createAcceptDto(token: string): AcceptInvitationDto {
   return plainToInstance(AcceptInvitationDto, { token });
 }
 
+type CreatedInvitationPayload = Pick<
+  Invitation,
+  | 'organizationId'
+  | 'email'
+  | 'role'
+  | 'tokenHash'
+  | 'status'
+  | 'invitedByUserId'
+  | 'expiresAt'
+>;
+
 describe('InvitationsService', () => {
   let service: InvitationsService;
   let invitationsRepository: {
-    create: jest.Mock<Invitation, [Partial<Invitation>]>;
+    create: jest.Mock<Invitation, [CreatedInvitationPayload]>;
     save: jest.Mock<Promise<Invitation>, [Invitation]>;
-    findOne: jest.Mock<Invitation | null, [unknown]>;
+    findOne: jest.Mock<
+      Promise<Invitation | null>,
+      [FindOneOptions<Invitation>]
+    >;
     findAndCount: jest.Mock;
     createQueryBuilder: jest.Mock;
   };
   let queryBuilder: {
-    where: jest.Mock;
-    andWhere: jest.Mock;
+    where: jest.Mock<unknown, [string, unknown?]>;
+    andWhere: jest.Mock<unknown, [string, Record<string, unknown>?]>;
     getOne: jest.Mock;
   };
   let organizationsRepository: {
-    findOne: jest.Mock<Organization | null, [unknown]>;
+    findOne: jest.Mock<
+      Promise<Organization | null>,
+      [FindOneOptions<Organization>]
+    >;
   };
   let membershipService: {
     isActiveMemberByEmail: jest.Mock;
@@ -73,13 +90,17 @@ describe('InvitationsService', () => {
 
   beforeEach(async () => {
     queryBuilder = {
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
+      where: jest.fn<unknown, [string, unknown?]>().mockReturnThis(),
+      andWhere: jest
+        .fn<unknown, [string, Record<string, unknown>?]>()
+        .mockReturnThis(),
       getOne: jest.fn().mockResolvedValue(null),
     };
 
     invitationsRepository = {
-      create: jest.fn((data: Partial<Invitation>) => data as Invitation),
+      create: jest.fn(
+        (data: CreatedInvitationPayload) => data as unknown as Invitation,
+      ),
       save: jest.fn((entity: Invitation) =>
         Promise.resolve(
           createInvitation({
@@ -90,9 +111,10 @@ describe('InvitationsService', () => {
           }),
         ),
       ),
-      findOne: jest.fn<Promise<Invitation | null>, [unknown]>(() =>
-        Promise.resolve(null),
-      ),
+      findOne: jest.fn<
+        Promise<Invitation | null>,
+        [FindOneOptions<Invitation>]
+      >(() => Promise.resolve(null)),
       findAndCount: jest.fn(),
       createQueryBuilder: jest.fn(
         () => queryBuilder as unknown as SelectQueryBuilder<Invitation>,
@@ -100,7 +122,10 @@ describe('InvitationsService', () => {
     };
 
     organizationsRepository = {
-      findOne: jest.fn<Promise<Organization | null>, [unknown]>(() =>
+      findOne: jest.fn<
+        Promise<Organization | null>,
+        [FindOneOptions<Organization>]
+      >(() =>
         Promise.resolve({ id: 'org-1', deletedAt: null } as Organization),
       ),
     };
@@ -497,6 +522,22 @@ describe('InvitationsService', () => {
     await expect(
       service.revokeInvitation('org-1', 'missing'),
     ).rejects.toMatchObject({ code: ErrorCode.RESOURCE_NOT_FOUND });
+  });
+
+  it('ignores derived-expired invites when checking for duplicates', async () => {
+    await service.createInvitation(
+      'org-1',
+      'user-1',
+      createDto({ email: 'jane@example.com' }),
+    );
+
+    const expiryGuard = queryBuilder.andWhere.mock.calls.find(
+      ([clause]) => clause === 'invitation.expiresAt > :now',
+    );
+
+    expect(expiryGuard).toBeDefined();
+    expect(expiryGuard?.[1].now).toBeInstanceOf(Date);
+    expect(invitationsRepository.save).toHaveBeenCalled();
   });
 
   it('lists pending invitations by default', async () => {

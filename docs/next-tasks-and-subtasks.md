@@ -199,7 +199,7 @@ Subtasks:
 - [x] **3.3.5** Add invite **create** + **list** endpoints with `@RequirePermissions(INVITE_CREATE | INVITE_READ)`; reject duplicate pending invites and existing members
 - [x] **3.3.6** Add invite **revoke** endpoint with `@RequirePermissions(INVITE_REVOKE)` (idempotent for already-revoked / expired)
 - [x] **3.3.7** Add token-based **accept** endpoint (authenticated user + token); validate status/expiry/email; create membership via `createMembership`; mark invite accepted
-- [ ] **3.3.8** Add service/controller tests (RBAC, expiry, revoke, duplicate member, role assignment); optional seed pending invite for local QA
+- [x] **3.3.8** Add service/controller tests (RBAC, expiry, revoke, duplicate member, role assignment); optional seed pending invite for local QA
 
 **3.3 out of scope** (land in **3.4** instead):
 
