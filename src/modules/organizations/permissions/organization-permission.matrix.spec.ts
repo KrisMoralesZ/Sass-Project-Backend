@@ -18,7 +18,7 @@ import {
 } from './organization-permission.matrix';
 
 describe('OrganizationPermission', () => {
-  it('covers projects, boards, issues, invites, and settings', () => {
+  it('covers projects, boards, issues, invites, members, and settings', () => {
     const resources = new Set(
       ORGANIZATION_PERMISSIONS.map(getOrganizationPermissionResource),
     );
@@ -27,6 +27,7 @@ describe('OrganizationPermission', () => {
       'board',
       'invite',
       'issue',
+      'member',
       'project',
       'settings',
     ]);
@@ -96,18 +97,25 @@ describe('ORGANIZATION_PERMISSION_MATRIX', () => {
     expect(
       roleHasPermission(
         OrganizationRole.MEMBER,
+        OrganizationPermission.MEMBER_UPDATE,
+      ),
+    ).toBe(false);
+    expect(
+      roleHasPermission(
+        OrganizationRole.MEMBER,
         OrganizationPermission.PROJECT_DELETE,
       ),
     ).toBe(false);
   });
 
-  it('allows ADMIN to manage invites, settings, and destructive project/board actions', () => {
+  it('allows ADMIN to manage invites, members, settings, and destructive project/board actions', () => {
     expect(
       roleHasEveryPermission(OrganizationRole.ADMIN, [
         OrganizationPermission.PROJECT_DELETE,
         OrganizationPermission.BOARD_DELETE,
         OrganizationPermission.INVITE_CREATE,
         OrganizationPermission.INVITE_REVOKE,
+        OrganizationPermission.MEMBER_UPDATE,
         OrganizationPermission.SETTINGS_UPDATE,
       ]),
     ).toBe(true);

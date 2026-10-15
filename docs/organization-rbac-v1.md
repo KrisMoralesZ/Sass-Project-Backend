@@ -46,6 +46,7 @@ createInvite(...) { ... }
 |---|---|
 | `PATCH /api/v1/organizations/:id` | `settings:update` |
 | `DELETE /api/v1/organizations/:id` | minimum role `OWNER` |
+| `PATCH /api/v1/members/:userId` | `member:update` (+ service-level last-owner/self rules) |
 
 ## Code reference
 
@@ -67,4 +68,5 @@ createInvite(...) { ... }
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-07-27 | Initial guards and decorators (task 3.2.4) |
+| 1.1 | 2026-10-13 | Documented `member:update` on `PATCH /members/:userId` (task 3.4) |
 | 1.1 | 2026-09-03 | Linked invitation policy (task 3.3.1) |

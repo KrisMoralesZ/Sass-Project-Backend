@@ -13,6 +13,7 @@ describe('OrganizationMembershipService', () => {
     save: jest.Mock;
     findOne: jest.Mock;
     find: jest.Mock;
+    count: jest.Mock;
     createQueryBuilder: jest.Mock;
   };
   let queryBuilder: {
@@ -72,6 +73,7 @@ describe('OrganizationMembershipService', () => {
       save: jest.fn((entity) => Promise.resolve(entity as OrganizationMember)),
       findOne: jest.fn(),
       find: jest.fn(),
+      count: jest.fn(),
       createQueryBuilder: jest.fn(
         () => queryBuilder as unknown as SelectQueryBuilder<OrganizationMember>,
       ),
@@ -223,6 +225,142 @@ describe('OrganizationMembershipService', () => {
 
     await expect(service.getMember('org-1', 'missing')).rejects.toMatchObject({
       code: ErrorCode.RESOURCE_NOT_FOUND,
+    });
+  });
+
+  describe('updateMemberRole', () => {
+    const ownerActor = {
+      userId: 'owner-1',
+      role: OrganizationRole.OWNER,
+    };
+
+    it('updates the member role and returns the member', async () => {
+      const target = {
+        ...membership,
+        userId: 'user-2',
+        role: OrganizationRole.MEMBER,
+      };
+      queryBuilder.getOne.mockResolvedValue(target);
+
+      const result = await service.updateMemberRole(
+        'org-1',
+        'user-2',
+        OrganizationRole.ADMIN,
+        ownerActor,
+      );
+
+      expect(membersRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ role: OrganizationRole.ADMIN }),
+      );
+      expect(result).toMatchObject({
+        userId: 'user-2',
+        role: OrganizationRole.ADMIN,
+      });
+    });
+
+    it('rejects changing your own role', async () => {
+      await expect(
+        service.updateMemberRole(
+          'org-1',
+          'owner-1',
+          OrganizationRole.ADMIN,
+          ownerActor,
+        ),
+      ).rejects.toMatchObject({ code: ErrorCode.CONFLICT });
+
+      expect(queryBuilder.getOne).not.toHaveBeenCalled();
+      expect(membersRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('throws not found when the member is missing', async () => {
+      queryBuilder.getOne.mockResolvedValue(null);
+
+      await expect(
+        service.updateMemberRole(
+          'org-1',
+          'missing',
+          OrganizationRole.ADMIN,
+          ownerActor,
+        ),
+      ).rejects.toMatchObject({ code: ErrorCode.RESOURCE_NOT_FOUND });
+    });
+
+    it('does not persist when the role is unchanged', async () => {
+      const target = { ...membership, userId: 'user-2' };
+      queryBuilder.getOne.mockResolvedValue(target);
+
+      const result = await service.updateMemberRole(
+        'org-1',
+        'user-2',
+        OrganizationRole.OWNER,
+        ownerActor,
+      );
+
+      expect(result.role).toBe(OrganizationRole.OWNER);
+      expect(membersRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('forbids an admin from granting the OWNER role', async () => {
+      const target = {
+        ...membership,
+        userId: 'user-2',
+        role: OrganizationRole.MEMBER,
+      };
+      queryBuilder.getOne.mockResolvedValue(target);
+
+      await expect(
+        service.updateMemberRole('org-1', 'user-2', OrganizationRole.OWNER, {
+          userId: 'admin-1',
+          role: OrganizationRole.ADMIN,
+        }),
+      ).rejects.toMatchObject({ code: ErrorCode.FORBIDDEN });
+
+      expect(membersRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('forbids an admin from revoking the OWNER role', async () => {
+      const target = { ...membership, userId: 'user-2' };
+      queryBuilder.getOne.mockResolvedValue(target);
+
+      await expect(
+        service.updateMemberRole('org-1', 'user-2', OrganizationRole.ADMIN, {
+          userId: 'admin-1',
+          role: OrganizationRole.ADMIN,
+        }),
+      ).rejects.toMatchObject({ code: ErrorCode.FORBIDDEN });
+    });
+
+    it('prevents demoting the last owner', async () => {
+      const target = { ...membership, userId: 'user-2' };
+      queryBuilder.getOne.mockResolvedValue(target);
+      membersRepository.count.mockResolvedValue(1);
+
+      await expect(
+        service.updateMemberRole(
+          'org-1',
+          'user-2',
+          OrganizationRole.ADMIN,
+          ownerActor,
+        ),
+      ).rejects.toMatchObject({ code: ErrorCode.MEMBER_LAST_OWNER });
+
+      expect(membersRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('allows demoting an owner when another owner remains', async () => {
+      const target = { ...membership, userId: 'user-2' };
+      queryBuilder.getOne.mockResolvedValue(target);
+      membersRepository.count.mockResolvedValue(2);
+
+      const result = await service.updateMemberRole(
+        'org-1',
+        'user-2',
+        OrganizationRole.ADMIN,
+        ownerActor,
+      );
+
+      expect(membersRepository.save).toHaveBeenCalled();
+      expect(result.role).toBe(OrganizationRole.ADMIN);
     });
   });
 });

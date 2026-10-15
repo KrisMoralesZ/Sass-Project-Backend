@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { SortOrder } from '@common/enums/sort-order.enum';
-import { AppException } from '@common/errors';
+import { AppException, ErrorCode } from '@common/errors';
 import {
   createPaginatedResult,
   resolvePagination,
@@ -169,6 +169,69 @@ export class OrganizationMembershipService {
     }
 
     return this.toMemberResponse(membership);
+  }
+
+  /**
+   * `PATCH /members/:userId` (task 3.4). Tenant-scoped: only the active
+   * organization may be mutated. Enforces the v1 membership policy:
+   * members cannot change their own role, only owners may grant or revoke
+   * OWNER, and the last remaining owner cannot be demoted.
+   */
+  async updateMemberRole(
+    organizationId: string,
+    userId: string,
+    role: OrganizationRole,
+    actor: { userId: string; role: OrganizationRole },
+  ): Promise<OrganizationMemberResponse> {
+    if (userId === actor.userId) {
+      throw AppException.conflict('You cannot change your own role.');
+    }
+
+    const membership = await this.createMembersWithProfileQueryBuilder(
+      organizationId,
+    )
+      .andWhere('member.userId = :userId', { userId })
+      .getOne();
+
+    if (!membership) {
+      throw AppException.notFound('Organization member not found');
+    }
+
+    if (membership.role === role) {
+      return this.toMemberResponse(membership);
+    }
+
+    if (
+      actor.role !== OrganizationRole.OWNER &&
+      (role === OrganizationRole.OWNER ||
+        membership.role === OrganizationRole.OWNER)
+    ) {
+      throw AppException.forbidden(
+        ErrorCode.FORBIDDEN,
+        'Only an owner can grant or revoke the OWNER role.',
+      );
+    }
+
+    if (
+      membership.role === OrganizationRole.OWNER &&
+      role !== OrganizationRole.OWNER &&
+      (await this.countActiveOwners(organizationId)) <= 1
+    ) {
+      throw new AppException(
+        ErrorCode.MEMBER_LAST_OWNER,
+        'The organization must keep at least one owner.',
+      );
+    }
+
+    membership.role = role;
+
+    return this.toMemberResponse(await this.membersRepository.save(membership));
+  }
+
+  private async countActiveOwners(organizationId: string): Promise<number> {
+    return this.membersRepository.count({
+      where: { organizationId, role: OrganizationRole.OWNER },
+    });
   }
 
   private createMembersWithProfileQueryBuilder(

@@ -14,6 +14,7 @@ these checks at the route/service boundary.
 | Boards | `board:create`, `board:read`, `board:update`, `board:delete` |
 | Issues | `issue:create`, `issue:read`, `issue:update`, `issue:delete`, `issue:assign`, `issue:move` |
 | Invites | `invite:create`, `invite:read`, `invite:revoke` |
+| Members | `member:update` |
 | Settings | `settings:read`, `settings:update` |
 
 ## Matrix
@@ -37,14 +38,15 @@ these checks at the route/service boundary.
 | `invite:create` | ✓ | ✓ | | |
 | `invite:read` | ✓ | ✓ | | |
 | `invite:revoke` | ✓ | ✓ | | |
+| `member:update` | ✓ | ✓ | | |
 | `settings:read` | ✓ | ✓ | ✓ | ✓ |
 | `settings:update` | ✓ | ✓ | | |
 
 ## Role summaries
 
 - **VIEWER** — read projects/boards/issues/settings
-- **MEMBER** — collaborate on work items; cannot delete projects/boards, manage invites, or change settings
-- **ADMIN** — member capabilities plus invites, settings updates, and destructive project/board actions
+- **MEMBER** — collaborate on work items; cannot delete projects/boards, manage invites, update member roles, or change settings
+- **ADMIN** — member capabilities plus invites, member role updates, settings updates, and destructive project/board actions
 - **OWNER** — every permission
 
 ## Usage
@@ -89,3 +91,4 @@ See [organization-rbac-v1.md](./organization-rbac-v1.md) for guards and decorato
 | 1.0 | 2026-07-27 | Initial matrix for projects, boards, issues, invites, settings |
 | 1.1 | 2026-07-27 | Linked RBAC guards documentation (task 3.2.4) |
 | 1.2 | 2026-09-03 | Linked invitation policy (task 3.3.1) |
+| 1.3 | 2026-10-13 | Added `member:update` for member role management (task 3.4) |
