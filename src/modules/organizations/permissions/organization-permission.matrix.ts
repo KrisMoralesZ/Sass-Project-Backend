@@ -30,6 +30,7 @@ const ADMIN_PERMISSIONS: OrganizationPermission[] = [
   OrganizationPermission.INVITE_CREATE,
   OrganizationPermission.INVITE_READ,
   OrganizationPermission.INVITE_REVOKE,
+  OrganizationPermission.MEMBER_UPDATE,
   OrganizationPermission.SETTINGS_UPDATE,
 ];
 

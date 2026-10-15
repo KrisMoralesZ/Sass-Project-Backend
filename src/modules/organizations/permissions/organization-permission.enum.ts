@@ -1,7 +1,8 @@
 /**
  * Organization-scoped permissions for v1 RBAC.
  *
- * Resources covered by task 3.2.2: projects, boards, issues, invites, settings.
+ * Resources covered by task 3.2.2: projects, boards, issues, invites, members,
+ * settings.
  *
  * @see ../../../../docs/organization-permissions-v1.md
  */
@@ -31,6 +32,9 @@ export enum OrganizationPermission {
   INVITE_READ = 'invite:read',
   INVITE_REVOKE = 'invite:revoke',
 
+  // Members
+  MEMBER_UPDATE = 'member:update',
+
   // Settings
   SETTINGS_READ = 'settings:read',
   SETTINGS_UPDATE = 'settings:update',
@@ -41,7 +45,7 @@ export const ORGANIZATION_PERMISSIONS = Object.values(
 ) as OrganizationPermission[];
 
 export type OrganizationPermissionResource =
-  'project' | 'board' | 'issue' | 'invite' | 'settings';
+  'project' | 'board' | 'issue' | 'invite' | 'member' | 'settings';
 
 export function getOrganizationPermissionResource(
   permission: OrganizationPermission,
