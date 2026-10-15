@@ -1,4 +1,12 @@
-import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Query,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiHeader,
@@ -6,8 +14,13 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { CurrentUser } from '@authentication/decorators/current-user.decorator';
 import { CurrentOrganization, ORGANIZATION_ID_HEADER } from '@common/tenant';
 import { ListOrganizationMembersQueryDto } from './dto/list-organization-members-query.dto';
+import { UpdateOrganizationMemberRoleDto } from './dto/update-organization-member-role.dto';
+import { OrganizationRole } from './enums/organization-role.enum';
+import { OrganizationPermission } from './permissions/organization-permission.enum';
+import { CurrentOrganizationRole, RequirePermissions } from './rbac';
 import { OrganizationMembershipService } from './services/organization-membership.service';
 
 @ApiTags('members')
@@ -51,5 +64,33 @@ export class OrganizationMembersController {
     @Param('userId', ParseUUIDPipe) userId: string,
   ) {
     return this.organizationMembershipService.getMember(organizationId, userId);
+  }
+
+  @Patch(':userId')
+  @RequirePermissions(OrganizationPermission.MEMBER_UPDATE)
+  @ApiOperation({ summary: 'Update a member role in the active organization' })
+  @ApiResponse({ status: 200, description: 'Member role updated successfully' })
+  @ApiResponse({ status: 400, description: 'Organization context is required' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Missing member:update permission' })
+  @ApiResponse({ status: 404, description: 'Member not found' })
+  @ApiResponse({
+    status: 409,
+    description:
+      'You cannot change your own role, or the last owner cannot be demoted',
+  })
+  updateRole(
+    @CurrentOrganization({ required: true }) organizationId: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Body() updateRoleDto: UpdateOrganizationMemberRoleDto,
+    @CurrentUser() user: { id: string },
+    @CurrentOrganizationRole() actorRole: OrganizationRole,
+  ) {
+    return this.organizationMembershipService.updateMemberRole(
+      organizationId,
+      userId,
+      updateRoleDto.role,
+      { userId: user.id, role: actorRole },
+    );
   }
 }

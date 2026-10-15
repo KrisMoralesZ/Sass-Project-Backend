@@ -6,13 +6,17 @@ import { OrganizationMembershipService } from './services/organization-membershi
 describe('OrganizationMembersController', () => {
   let controller: OrganizationMembersController;
   let organizationMembershipService: jest.Mocked<
-    Pick<OrganizationMembershipService, 'listMembers' | 'getMember'>
+    Pick<
+      OrganizationMembershipService,
+      'listMembers' | 'getMember' | 'updateMemberRole'
+    >
   >;
 
   beforeEach(async () => {
     organizationMembershipService = {
       listMembers: jest.fn(),
       getMember: jest.fn(),
+      updateMemberRole: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -68,6 +72,38 @@ describe('OrganizationMembersController', () => {
     expect(organizationMembershipService.getMember).toHaveBeenCalledWith(
       'org-1',
       'user-1',
+    );
+  });
+
+  it('delegates role updates to the membership service with the actor role', async () => {
+    organizationMembershipService.updateMemberRole.mockResolvedValue({
+      id: 'member-1',
+      organizationId: 'org-1',
+      userId: 'user-1',
+      role: OrganizationRole.ADMIN,
+      email: 'member@company.com',
+      displayName: 'Member',
+      avatarUrl: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await controller.updateRole(
+      'org-1',
+      'user-1',
+      { role: OrganizationRole.ADMIN },
+      { id: 'owner-1' },
+      OrganizationRole.OWNER,
+    );
+
+    expect(organizationMembershipService.updateMemberRole).toHaveBeenCalledWith(
+      'org-1',
+      'user-1',
+      OrganizationRole.ADMIN,
+      {
+        userId: 'owner-1',
+        role: OrganizationRole.OWNER,
+      },
     );
   });
 });
