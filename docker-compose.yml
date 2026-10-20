@@ -38,6 +38,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    command: sh -c "npm run migration:run && npm run start:dev"
 
   pgadmin:
     image: dpage/pgadmin4:latest
