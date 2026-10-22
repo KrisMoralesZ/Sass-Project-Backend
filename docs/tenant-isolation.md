@@ -79,7 +79,7 @@ These exist outside a single organization boundary.
 | Entity | Module | Notes |
 |---|---|---|
 | `User` | Users / Auth | Identity is global; users can belong to many orgs |
-| `Invitation` | Organizations | Tied to an org via FK, but token acceptance may be public |
+| `Invitation` | Organizations | Tied to an org via FK; create/list/revoke are tenant-scoped, accept is authenticated and not tenant-scoped ([organization-invitations-v1.md](./organization-invitations-v1.md)) |
 | Auth tokens / sessions | Authentication | User-scoped, not org-scoped |
 
 ### Tenant-scoped entities (extend `TenantScopedEntity`)
@@ -276,3 +276,4 @@ await this.issuesRepository.scopedQueryBuilder('issue')
 | 1.1 | 2026-07-23 | Documented v1 multi-membership policy (task 2.3.1) |
 | 1.2 | 2026-07-27 | Header-first organization resolution and UUID validation (task 2.3.3) |
 | 1.2 | 2026-07-27 | Membership validation before tenant context acceptance (task 2.3.2) |
+| 1.3 | 2026-09-03 | Invitation accept is authenticated, not tenant-scoped (task 3.3.1) |

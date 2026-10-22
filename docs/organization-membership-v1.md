@@ -36,7 +36,7 @@ Although users can belong to many organizations, **each request uses exactly one
 - Use `OrganizationMembershipService` for membership checks.
 - Use `TenantContextService.requireOrganizationId()` for tenant-scoped writes and reads.
 - Organization listing endpoints are user-scoped (`@OptionalOrganization()`), not tenant-scoped.
-- Invitations and role management (Phase 3) should assume multi-membership is normal.
+- Invitations and role management (Phase 3) should assume multi-membership is normal. See [organization-invitations-v1.md](./organization-invitations-v1.md).
 
 ## Out of scope for v1
 
@@ -79,6 +79,7 @@ This keeps multi-org switching deterministic: changing the header changes the ac
 | `src/common/tenant/tenant-membership.validator.ts` | Membership gate before context acceptance |
 | `src/common/tenant/guards/tenant.guard.ts` | Accepts `tenantContext` only after validation |
 | `src/common/tenant/decorators/current-organization.decorator.ts` | Reads accepted organization context |
+| `docs/organization-invitations-v1.md` | Invitation policy (task 3.3.1) |
 | `docs/tenant-isolation.md` | Tenant boundary and request lifecycle rules |
 
 ## Revision history
@@ -88,3 +89,4 @@ This keeps multi-org switching deterministic: changing the header changes the ac
 | 1.0 | 2026-07-23 | v1 decision: multi-membership with explicit per-request active organization |
 | 1.1 | 2026-07-27 | Documented membership validation before tenant context acceptance (task 2.3.2) |
 | 1.2 | 2026-07-27 | Documented consistent header-first resolution and UUID validation (task 2.3.3) |
+| 1.3 | 2026-09-03 | Linked invitation policy (task 3.3.1) |

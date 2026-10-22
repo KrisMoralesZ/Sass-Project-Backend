@@ -1,4 +1,5 @@
 export * from './constants/organization-membership-v1.policy';
+export * from './constants/organization-invitations-v1.policy';
 export * from './dto/create-organization.dto';
 export * from './dto/list-organization-members-query.dto';
 export * from './dto/list-organizations-query.dto';

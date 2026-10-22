@@ -54,6 +54,7 @@ createInvite(...) { ... }
 | `src/modules/organizations/rbac/` | Decorators, guard, metadata |
 | `src/modules/organizations/services/organization-membership.service.ts` | `getActiveMembership()` |
 | `docs/organization-permissions-v1.md` | Permission matrix |
+| `docs/organization-invitations-v1.md` | Invite create/list/revoke vs accept |
 
 ## Out of scope
 
@@ -66,3 +67,4 @@ createInvite(...) { ... }
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-07-27 | Initial guards and decorators (task 3.2.4) |
+| 1.1 | 2026-09-03 | Linked invitation policy (task 3.3.1) |
