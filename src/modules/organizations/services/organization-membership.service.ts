@@ -53,6 +53,26 @@ export class OrganizationMembershipService {
     return membership !== null;
   }
 
+  /**
+   * Used by invitation create: the invitee is not a member yet, so membership
+   * is resolved from the invitee email instead of a user id.
+   */
+  async isActiveMemberByEmail(
+    organizationId: string,
+    email: string,
+  ): Promise<boolean> {
+    const membership = await this.membersRepository
+      .createQueryBuilder('member')
+      .innerJoin('member.user', 'user')
+      .innerJoin('member.organization', 'organization')
+      .where('member.organizationId = :organizationId', { organizationId })
+      .andWhere('user.email = :email', { email })
+      .andWhere('organization.deletedAt IS NULL')
+      .getOne();
+
+    return membership !== null;
+  }
+
   async getActiveMembership(
     userId: string,
     organizationId: string,
