@@ -16,11 +16,6 @@ import { AppConfigModule } from '@config/app-config.module';
         const username = configService.get<string>('database.username');
         const password = configService.get<string>('database.password');
         const database = configService.get<string>('database.name');
-        const synchronizeValue = configService.get<string | boolean>(
-          'database.synchronize',
-        );
-        const synchronize =
-          synchronizeValue === true || synchronizeValue === 'true';
 
         if (!host || !username || !database) {
           throw new Error(
@@ -37,7 +32,8 @@ import { AppConfigModule } from '@config/app-config.module';
           database,
           ...(sslEnabled ? { ssl: { rejectUnauthorized: false } } : {}),
           autoLoadEntities: true,
-          synchronize,
+          migrations: ['dist/migrations/*.js'],
+          migrationsRun: process.env.NODE_ENV === 'production',
           retryAttempts: 3,
           retryDelay: 3000,
         };
