@@ -73,6 +73,26 @@ Acceptance criteria:
 - Errors are predictable and easy to handle on the client side
 - Monitoring and observability hooks are available from the start
 
+### Task 0.4 — Database migration strategy
+
+Use TypeORM migrations as the sole mechanism for schema changes. Keep schema synchronization disabled in every environment.
+
+Subtasks:
+- [x] **0.4.1** Configure a TypeORM `DataSource` for the migration CLI, using the same validated database configuration as the NestJS application
+- [x] **0.4.2** Standardize migration files under `src/database/migrations` and ensure they are included in the compiled output
+- [x] **0.4.3** Add package scripts for generating, running, reverting, and listing migrations in development
+- [x] **0.4.4** Create and review an initial baseline migration that matches the current entities and database schema
+- [x] **0.4.5** Reconcile existing databases with the baseline before enabling automatic migration runs; do not blindly rerun schema creation against an already-initialized database
+- [x] **0.4.6** Investigate and resolve duplicate schema declarations, including the existing `idx_tenant_scoped_organization_id` index, before creating migrations
+- [x] **0.4.7** Require migrations to be reviewed, reversible where practical, and safe for production data
+- [x] **0.4.8** Document local and production migration workflows, including backup and rollback expectations
+
+Acceptance criteria:
+- [x] `synchronize` is disabled in all environments
+- [x] A fresh database can be created by running migrations
+- [x] Existing databases can be brought under migration tracking without duplicate tables or indexes
+- [x] Production schema changes are applied through an explicit, documented deployment step
+
 ---
 
 ## Phase 1 — Authentication
