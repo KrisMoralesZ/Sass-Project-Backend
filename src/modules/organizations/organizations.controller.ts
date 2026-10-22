@@ -82,7 +82,10 @@ export class OrganizationsController {
     status: 200,
     description: 'Organization updated successfully',
   })
-  @ApiResponse({ status: 403, description: 'Missing settings:update permission' })
+  @ApiResponse({
+    status: 403,
+    description: 'Missing settings:update permission',
+  })
   @ApiResponse({ status: 404, description: 'Organization not found' })
   @ApiResponse({ status: 409, description: 'Organization slug already exists' })
   update(

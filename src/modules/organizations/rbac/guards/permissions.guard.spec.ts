@@ -26,12 +26,9 @@ describe('PermissionsGuard', () => {
       getAllAndOverride: jest.fn(),
     } as unknown as jest.Mocked<Reflector>;
 
-    guard = new PermissionsGuard(
-      reflector,
-      {
-        getActiveMembership,
-      } as unknown as OrganizationMembershipService,
-    );
+    guard = new PermissionsGuard(reflector, {
+      getActiveMembership,
+    } as unknown as OrganizationMembershipService);
   });
 
   const createContext = (request: RequestWithTenantContext) =>

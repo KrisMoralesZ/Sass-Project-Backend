@@ -1,6 +1,9 @@
 export * from './constants/organization-membership-v1.policy';
 export * from './constants/organization-invitations-v1.policy';
+export * from './dto/accept-invitation.dto';
+export * from './dto/create-invitation.dto';
 export * from './dto/create-organization.dto';
+export * from './dto/list-invitations-query.dto';
 export * from './dto/list-organization-members-query.dto';
 export * from './dto/list-organizations-query.dto';
 export * from './dto/organization-feature-flags.dto';
@@ -11,6 +14,7 @@ export * from './entities';
 export * from './enums/organization-plan.enum';
 export * from './enums/organization-role.enum';
 export * from './permissions';
+export * from './interfaces/invitation-response.interface';
 export * from './interfaces/organization-feature-flags.interface';
 export * from './interfaces/organization-member-response.interface';
 export * from './interfaces/organization-response.interface';
