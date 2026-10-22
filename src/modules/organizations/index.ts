@@ -23,4 +23,5 @@ export * from './organization-members.controller';
 export * from './organizations.controller';
 export * from './organizations.module';
 export * from './organizations.service';
+export * from './services/development-invitation-mailer.service';
 export * from './services/organization-membership.service';

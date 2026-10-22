@@ -151,7 +151,9 @@ Invitation rows belong to an organization but **accept is not a tenant-scoped ca
 
 ## Email stub (implemented in 3.3.4)
 
-v1 does not send mail. Create logs the accept URL (and email/role/org) for local QA. Production SMTP is out of scope.
+v1 does not send mail. `DevelopmentInvitationMailer` logs the accept URL (and email/role/org/expiry) as JSON for local QA. The origin comes from `FRONTEND_ORIGIN` (default `http://localhost:5173`); in `NODE_ENV=production` the stub logs a warning instead, so the missing transport is visible. Production SMTP is out of scope.
+
+Swapping in a real transport means replacing that provider in `OrganizationsModule`; the invitation service only depends on it.
 
 ## Out of scope for 3.3.1
 
@@ -169,6 +171,7 @@ v1 does not send mail. Create logs the accept URL (and email/role/org) for local
 | `src/modules/organizations/constants/organization-invitations-v1.policy.ts` | Statuses, TTL, hashing rule, assignable roles |
 | `src/modules/organizations/enums/organization-role.enum.ts` | `DEFAULT_ORGANIZATION_ROLE` (`MEMBER`) |
 | `src/modules/organizations/permissions/organization-permission.enum.ts` | `invite:create` / `invite:read` / `invite:revoke` |
+| `src/modules/organizations/services/development-invitation-mailer.service.ts` | Email delivery stub that logs the accept URL |
 | `src/modules/organizations/services/organization-membership.service.ts` | `createMembership()` on accept |
 | `docs/organization-roles-v1.md` | Base roles and default invite role |
 | `docs/organization-permissions-v1.md` | Invite permission matrix |

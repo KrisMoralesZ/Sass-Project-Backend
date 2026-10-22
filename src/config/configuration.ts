@@ -23,6 +23,8 @@ export default () => ({
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean),
+  /** Public SPA origin used to build links such as the invitation accept URL. */
+  frontendOrigin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173',
   auth: {
     bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS ?? '12', 10),
     jwtAccessSecret: process.env.JWT_ACCESS_SECRET,

@@ -65,6 +65,11 @@ export class EnvironmentVariables {
   @IsString()
   CORS_ORIGINS?: string;
 
+  /** Public SPA origin used to build links such as the invitation accept URL. */
+  @IsOptional()
+  @IsString()
+  FRONTEND_ORIGIN?: string;
+
   @IsString()
   JWT_ACCESS_SECRET: string;
 

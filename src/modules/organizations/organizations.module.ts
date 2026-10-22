@@ -7,6 +7,7 @@ import { OrganizationMembersController } from './organization-members.controller
 import { OrganizationsController } from './organizations.controller';
 import { OrganizationsService } from './organizations.service';
 import { PermissionsGuard } from './rbac/guards/permissions.guard';
+import { DevelopmentInvitationMailer } from './services/development-invitation-mailer.service';
 import { OrganizationMembershipService } from './services/organization-membership.service';
 
 @Module({
@@ -17,11 +18,13 @@ import { OrganizationMembershipService } from './services/organization-membershi
   providers: [
     OrganizationsService,
     OrganizationMembershipService,
+    DevelopmentInvitationMailer,
     PermissionsGuard,
   ],
   exports: [
     OrganizationsService,
     OrganizationMembershipService,
+    DevelopmentInvitationMailer,
     PermissionsGuard,
     TypeOrmModule,
   ],
