@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -91,6 +92,24 @@ export class OrganizationMembersController {
       userId,
       updateRoleDto.role,
       { userId: user.id, role: actorRole },
+    );
+  }
+
+  @Delete(':userId')
+  @RequirePermissions(OrganizationPermission.MEMBER_UPDATE)
+  @ApiOperation({ summary: 'Remove a member from the active organization' })
+  @ApiResponse({ status: 200, description: 'Member removed successfully' })
+  @ApiResponse({ status: 400, description: 'Organization context is required' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Missing member:update permission' })
+  @ApiResponse({ status: 404, description: 'Member not found' })
+  removeMember(
+    @CurrentOrganization({ required: true }) organizationId: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+  ) {
+    return this.organizationMembershipService.removeMember(
+      organizationId,
+      userId,
     );
   }
 }

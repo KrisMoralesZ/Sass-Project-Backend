@@ -228,6 +228,17 @@ export class OrganizationMembershipService {
     return this.toMemberResponse(await this.membersRepository.save(membership));
   }
 
+  async removeMember(organizationId: string, userId: string): Promise<void> {
+    const result = await this.membersRepository.delete({
+      organizationId,
+      userId,
+    });
+
+    if (!result.affected) {
+      throw AppException.notFound('Organization member not found');
+    }
+  }
+
   private async countActiveOwners(organizationId: string): Promise<number> {
     return this.membersRepository.count({
       where: { organizationId, role: OrganizationRole.OWNER },
