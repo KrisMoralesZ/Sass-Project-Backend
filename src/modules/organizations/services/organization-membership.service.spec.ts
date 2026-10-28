@@ -159,6 +159,26 @@ describe('OrganizationMembershipService', () => {
     );
   });
 
+  it('returns true when the email already belongs to the organization', async () => {
+    queryBuilder.getOne.mockResolvedValue(membership);
+
+    await expect(
+      service.isActiveMemberByEmail('org-1', 'owner@company.com'),
+    ).resolves.toBe(true);
+    expect(queryBuilder.innerJoin).toHaveBeenCalledWith('member.user', 'user');
+    expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.email = :email', {
+      email: 'owner@company.com',
+    });
+  });
+
+  it('returns false when no member matches the invited email', async () => {
+    queryBuilder.getOne.mockResolvedValue(null);
+
+    await expect(
+      service.isActiveMemberByEmail('org-1', 'guest@company.com'),
+    ).resolves.toBe(false);
+  });
+
   it('lists organization members with profile fields', async () => {
     queryBuilder.getManyAndCount.mockResolvedValue([[membership], 1]);
 
