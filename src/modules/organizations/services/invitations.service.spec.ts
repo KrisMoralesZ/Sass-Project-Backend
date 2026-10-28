@@ -1,12 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
-import { SelectQueryBuilder } from 'typeorm';
+import { FindOneOptions, SelectQueryBuilder } from 'typeorm';
 import { ErrorCode } from '@common/errors/error-code.enum';
 import { INVITATION_TTL_MS } from '../constants/organization-invitations-v1.policy';
+import { AcceptInvitationDto } from '../dto/accept-invitation.dto';
 import { CreateInvitationDto } from '../dto/create-invitation.dto';
 import { Invitation } from '../entities/invitation.entity';
+import { Organization } from '../entities/organization.entity';
+import { OrganizationMember } from '../entities/organization-member.entity';
 import { OrganizationRole } from '../enums/organization-role.enum';
+import { hashInvitationToken } from '../utils/invitation-token.util';
 import {
   DevelopmentInvitationMailer,
   type InvitationEmailPayload,
@@ -18,22 +22,52 @@ function createDto(payload: Record<string, unknown>): CreateInvitationDto {
   return plainToInstance(CreateInvitationDto, payload);
 }
 
+function createAcceptDto(token: string): AcceptInvitationDto {
+  return plainToInstance(AcceptInvitationDto, { token });
+}
+
+type CreatedInvitationPayload = Pick<
+  Invitation,
+  | 'organizationId'
+  | 'email'
+  | 'role'
+  | 'tokenHash'
+  | 'status'
+  | 'invitedByUserId'
+  | 'expiresAt'
+>;
+
 describe('InvitationsService', () => {
   let service: InvitationsService;
   let invitationsRepository: {
-    create: jest.Mock<Invitation, [Partial<Invitation>]>;
+    create: jest.Mock<Invitation, [CreatedInvitationPayload]>;
     save: jest.Mock<Promise<Invitation>, [Invitation]>;
-    findOne: jest.Mock<Invitation | null, [unknown]>;
+    findOne: jest.Mock<
+      Promise<Invitation | null>,
+      [FindOneOptions<Invitation>]
+    >;
     findAndCount: jest.Mock;
     createQueryBuilder: jest.Mock;
   };
   let queryBuilder: {
-    where: jest.Mock;
-    andWhere: jest.Mock;
+    where: jest.Mock<unknown, [string, unknown?]>;
+    andWhere: jest.Mock<unknown, [string, Record<string, unknown>?]>;
     getOne: jest.Mock;
+  };
+  let organizationsRepository: {
+    findOne: jest.Mock<
+      Promise<Organization | null>,
+      [FindOneOptions<Organization>]
+    >;
   };
   let membershipService: {
     isActiveMemberByEmail: jest.Mock;
+    isActiveMember: jest.Mock;
+    createMembership: jest.Mock<
+      Promise<OrganizationMember>,
+      [string, string, OrganizationRole]
+    >;
+    getMember: jest.Mock;
   };
   let invitationMailer: {
     sendInvitationEmail: jest.Mock<void, [InvitationEmailPayload]>;
@@ -56,13 +90,17 @@ describe('InvitationsService', () => {
 
   beforeEach(async () => {
     queryBuilder = {
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
+      where: jest.fn<unknown, [string, unknown?]>().mockReturnThis(),
+      andWhere: jest
+        .fn<unknown, [string, Record<string, unknown>?]>()
+        .mockReturnThis(),
       getOne: jest.fn().mockResolvedValue(null),
     };
 
     invitationsRepository = {
-      create: jest.fn((data: Partial<Invitation>) => data as Invitation),
+      create: jest.fn(
+        (data: CreatedInvitationPayload) => data as unknown as Invitation,
+      ),
       save: jest.fn((entity: Invitation) =>
         Promise.resolve(
           createInvitation({
@@ -73,17 +111,45 @@ describe('InvitationsService', () => {
           }),
         ),
       ),
-      findOne: jest.fn<Promise<Invitation | null>, [unknown]>(() =>
-        Promise.resolve(null),
-      ),
+      findOne: jest.fn<
+        Promise<Invitation | null>,
+        [FindOneOptions<Invitation>]
+      >(() => Promise.resolve(null)),
       findAndCount: jest.fn(),
       createQueryBuilder: jest.fn(
         () => queryBuilder as unknown as SelectQueryBuilder<Invitation>,
       ),
     };
 
+    organizationsRepository = {
+      findOne: jest.fn<
+        Promise<Organization | null>,
+        [FindOneOptions<Organization>]
+      >(() =>
+        Promise.resolve({ id: 'org-1', deletedAt: null } as Organization),
+      ),
+    };
+
     membershipService = {
       isActiveMemberByEmail: jest.fn().mockResolvedValue(false),
+      isActiveMember: jest.fn().mockResolvedValue(false),
+      createMembership: jest.fn<
+        Promise<OrganizationMember>,
+        [string, string, OrganizationRole]
+      >(() =>
+        Promise.resolve({ id: 'member-1' } as unknown as OrganizationMember),
+      ),
+      getMember: jest.fn().mockResolvedValue({
+        id: 'member-1',
+        organizationId: 'org-1',
+        userId: 'user-2',
+        role: OrganizationRole.MEMBER,
+        email: 'jane@example.com',
+        displayName: 'Jane',
+        avatarUrl: null,
+        createdAt: new Date('2026-01-15T00:00:00.000Z'),
+        updatedAt: new Date('2026-01-15T00:00:00.000Z'),
+      }),
     };
 
     invitationMailer = {
@@ -96,6 +162,10 @@ describe('InvitationsService', () => {
         {
           provide: getRepositoryToken(Invitation),
           useValue: invitationsRepository,
+        },
+        {
+          provide: getRepositoryToken(Organization),
+          useValue: organizationsRepository,
         },
         {
           provide: OrganizationMembershipService,
@@ -218,6 +288,186 @@ describe('InvitationsService', () => {
     expect(invitationsRepository.save).not.toHaveBeenCalled();
   });
 
+  it('creates the membership and marks the invitation accepted', async () => {
+    const token = 'raw-token-value-for-accept';
+    invitationsRepository.findOne.mockResolvedValue(
+      createInvitation({ tokenHash: hashInvitationToken(token) }),
+    );
+
+    const result = await service.acceptInvitation(
+      { id: 'user-2', email: 'Jane@Example.com' },
+      createAcceptDto(token),
+    );
+
+    expect(invitationsRepository.findOne).toHaveBeenCalledWith({
+      where: { tokenHash: hashInvitationToken(token) },
+    });
+    expect(membershipService.createMembership).toHaveBeenCalledWith(
+      'org-1',
+      'user-2',
+      OrganizationRole.MEMBER,
+    );
+    expect(invitationsRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'invite-1', status: 'accepted' }),
+    );
+    expect(result.invitation.status).toBe('accepted');
+    expect(result.membership).toMatchObject({
+      organizationId: 'org-1',
+      userId: 'user-2',
+      role: OrganizationRole.MEMBER,
+    });
+  });
+
+  it('grants the role stored on the invitation without remapping it', async () => {
+    const token = 'raw-token-value-for-accept';
+    invitationsRepository.findOne.mockResolvedValue(
+      createInvitation({
+        tokenHash: hashInvitationToken(token),
+        role: OrganizationRole.ADMIN,
+      }),
+    );
+
+    await service.acceptInvitation(
+      { id: 'user-2', email: 'jane@example.com' },
+      createAcceptDto(token),
+    );
+
+    expect(membershipService.createMembership).toHaveBeenCalledWith(
+      'org-1',
+      'user-2',
+      OrganizationRole.ADMIN,
+    );
+  });
+
+  it('throws not found for an unknown token', async () => {
+    invitationsRepository.findOne.mockResolvedValue(null);
+
+    await expect(
+      service.acceptInvitation(
+        { id: 'user-2', email: 'jane@example.com' },
+        createAcceptDto('unknown-token'),
+      ),
+    ).rejects.toMatchObject({ code: ErrorCode.RESOURCE_NOT_FOUND });
+
+    expect(membershipService.createMembership).not.toHaveBeenCalled();
+  });
+
+  it('rejects a pending invitation that is past its TTL', async () => {
+    invitationsRepository.findOne.mockResolvedValue(
+      createInvitation({ expiresAt: new Date(Date.now() - 1000) }),
+    );
+
+    await expect(
+      service.acceptInvitation(
+        { id: 'user-2', email: 'jane@example.com' },
+        createAcceptDto('raw-token-value-for-accept'),
+      ),
+    ).rejects.toMatchObject({ code: ErrorCode.BAD_REQUEST });
+
+    expect(membershipService.createMembership).not.toHaveBeenCalled();
+  });
+
+  it('rejects a revoked invitation', async () => {
+    invitationsRepository.findOne.mockResolvedValue(
+      createInvitation({ status: 'revoked' }),
+    );
+
+    await expect(
+      service.acceptInvitation(
+        { id: 'user-2', email: 'jane@example.com' },
+        createAcceptDto('raw-token-value-for-accept'),
+      ),
+    ).rejects.toMatchObject({ code: ErrorCode.BAD_REQUEST });
+
+    expect(membershipService.createMembership).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invitee whose email does not match', async () => {
+    invitationsRepository.findOne.mockResolvedValue(createInvitation());
+
+    await expect(
+      service.acceptInvitation(
+        { id: 'user-2', email: 'mallory@example.com' },
+        createAcceptDto('raw-token-value-for-accept'),
+      ),
+    ).rejects.toMatchObject({ code: ErrorCode.FORBIDDEN });
+
+    expect(membershipService.createMembership).not.toHaveBeenCalled();
+  });
+
+  it('rejects accepting without an authenticated email', async () => {
+    await expect(
+      service.acceptInvitation(
+        { id: 'user-2' },
+        createAcceptDto('raw-token-value-for-accept'),
+      ),
+    ).rejects.toMatchObject({ code: ErrorCode.UNAUTHORIZED });
+
+    expect(invitationsRepository.findOne).not.toHaveBeenCalled();
+  });
+
+  it('rejects when the user already joined the organization another way', async () => {
+    invitationsRepository.findOne.mockResolvedValue(createInvitation());
+    membershipService.isActiveMember.mockResolvedValue(true);
+
+    await expect(
+      service.acceptInvitation(
+        { id: 'user-2', email: 'jane@example.com' },
+        createAcceptDto('raw-token-value-for-accept'),
+      ),
+    ).rejects.toMatchObject({ code: ErrorCode.CONFLICT });
+
+    expect(membershipService.createMembership).not.toHaveBeenCalled();
+  });
+
+  it('is idempotent when the same user already accepted the invitation', async () => {
+    invitationsRepository.findOne.mockResolvedValue(
+      createInvitation({ status: 'accepted' }),
+    );
+    membershipService.isActiveMember.mockResolvedValue(true);
+
+    const result = await service.acceptInvitation(
+      { id: 'user-2', email: 'jane@example.com' },
+      createAcceptDto('raw-token-value-for-accept'),
+    );
+
+    expect(membershipService.createMembership).not.toHaveBeenCalled();
+    expect(invitationsRepository.save).not.toHaveBeenCalled();
+    expect(result.invitation.status).toBe('accepted');
+    expect(result.membership.userId).toBe('user-2');
+  });
+
+  it('conflicts when the invitation was accepted but the membership is gone', async () => {
+    invitationsRepository.findOne.mockResolvedValue(
+      createInvitation({ status: 'accepted' }),
+    );
+    membershipService.isActiveMember.mockResolvedValue(false);
+
+    await expect(
+      service.acceptInvitation(
+        { id: 'user-2', email: 'jane@example.com' },
+        createAcceptDto('raw-token-value-for-accept'),
+      ),
+    ).rejects.toMatchObject({ code: ErrorCode.CONFLICT });
+  });
+
+  it('refuses to join an archived organization', async () => {
+    invitationsRepository.findOne.mockResolvedValue(createInvitation());
+    organizationsRepository.findOne.mockResolvedValue({
+      id: 'org-1',
+      deletedAt: new Date('2026-02-01T00:00:00.000Z'),
+    } as Organization);
+
+    await expect(
+      service.acceptInvitation(
+        { id: 'user-2', email: 'jane@example.com' },
+        createAcceptDto('raw-token-value-for-accept'),
+      ),
+    ).rejects.toMatchObject({ code: ErrorCode.TENANT_ORGANIZATION_FORBIDDEN });
+
+    expect(membershipService.createMembership).not.toHaveBeenCalled();
+  });
+
   it('revokes a pending invitation', async () => {
     invitationsRepository.findOne.mockResolvedValue(createInvitation());
 
@@ -272,6 +522,22 @@ describe('InvitationsService', () => {
     await expect(
       service.revokeInvitation('org-1', 'missing'),
     ).rejects.toMatchObject({ code: ErrorCode.RESOURCE_NOT_FOUND });
+  });
+
+  it('ignores derived-expired invites when checking for duplicates', async () => {
+    await service.createInvitation(
+      'org-1',
+      'user-1',
+      createDto({ email: 'jane@example.com' }),
+    );
+
+    const expiryGuard = queryBuilder.andWhere.mock.calls.find(
+      ([clause]) => clause === 'invitation.expiresAt > :now',
+    );
+
+    expect(expiryGuard).toBeDefined();
+    expect(expiryGuard?.[1].now).toBeInstanceOf(Date);
+    expect(invitationsRepository.save).toHaveBeenCalled();
   });
 
   it('lists pending invitations by default', async () => {

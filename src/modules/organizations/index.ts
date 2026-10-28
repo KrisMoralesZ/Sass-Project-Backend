@@ -14,6 +14,7 @@ export * from './entities';
 export * from './enums/organization-plan.enum';
 export * from './enums/organization-role.enum';
 export * from './permissions';
+export * from './interfaces/accept-invitation-response.interface';
 export * from './interfaces/invitation-response.interface';
 export * from './interfaces/organization-feature-flags.interface';
 export * from './interfaces/organization-member-response.interface';
