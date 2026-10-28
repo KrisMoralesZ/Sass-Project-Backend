@@ -35,6 +35,10 @@ export const ERROR_DEFINITIONS: Record<ErrorCode, ErrorDefinition> = {
     status: HttpStatus.CONFLICT,
     message: 'Conflict',
   },
+  [ErrorCode.MEMBER_LAST_OWNER]: {
+    status: HttpStatus.CONFLICT,
+    message: 'The organization must keep at least one owner',
+  },
   [ErrorCode.TENANT_ORGANIZATION_REQUIRED]: {
     status: HttpStatus.BAD_REQUEST,
     message: 'Organization context is required',
