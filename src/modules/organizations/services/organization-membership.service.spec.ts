@@ -14,6 +14,7 @@ describe('OrganizationMembershipService', () => {
     findOne: jest.Mock;
     find: jest.Mock;
     count: jest.Mock;
+    delete: jest.Mock;
     createQueryBuilder: jest.Mock;
   };
   let queryBuilder: {
@@ -74,6 +75,7 @@ describe('OrganizationMembershipService', () => {
       findOne: jest.fn(),
       find: jest.fn(),
       count: jest.fn(),
+      delete: jest.fn(),
       createQueryBuilder: jest.fn(
         () => queryBuilder as unknown as SelectQueryBuilder<OrganizationMember>,
       ),
@@ -225,6 +227,31 @@ describe('OrganizationMembershipService', () => {
 
     await expect(service.getMember('org-1', 'missing')).rejects.toMatchObject({
       code: ErrorCode.RESOURCE_NOT_FOUND,
+    });
+  });
+
+  describe('removeMember', () => {
+    it('deletes only the member in the active organization', async () => {
+      membersRepository.delete.mockResolvedValue({ affected: 1 });
+
+      await expect(
+        service.removeMember('org-1', 'user-2'),
+      ).resolves.toBeUndefined();
+
+      expect(membersRepository.delete).toHaveBeenCalledWith({
+        organizationId: 'org-1',
+        userId: 'user-2',
+      });
+    });
+
+    it('throws not found when the member is not in the active organization', async () => {
+      membersRepository.delete.mockResolvedValue({ affected: 0 });
+
+      await expect(
+        service.removeMember('org-1', 'missing'),
+      ).rejects.toMatchObject({
+        code: ErrorCode.RESOURCE_NOT_FOUND,
+      });
     });
   });
 

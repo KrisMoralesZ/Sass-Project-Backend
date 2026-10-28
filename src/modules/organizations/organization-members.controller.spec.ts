@@ -8,7 +8,7 @@ describe('OrganizationMembersController', () => {
   let organizationMembershipService: jest.Mocked<
     Pick<
       OrganizationMembershipService,
-      'listMembers' | 'getMember' | 'updateMemberRole'
+      'listMembers' | 'getMember' | 'updateMemberRole' | 'removeMember'
     >
   >;
 
@@ -17,6 +17,7 @@ describe('OrganizationMembersController', () => {
       listMembers: jest.fn(),
       getMember: jest.fn(),
       updateMemberRole: jest.fn(),
+      removeMember: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -104,6 +105,15 @@ describe('OrganizationMembersController', () => {
         userId: 'owner-1',
         role: OrganizationRole.OWNER,
       },
+    );
+  });
+
+  it('delegates member removal with the active organization and user id', async () => {
+    await controller.removeMember('org-1', 'user-2');
+
+    expect(organizationMembershipService.removeMember).toHaveBeenCalledWith(
+      'org-1',
+      'user-2',
     );
   });
 });
