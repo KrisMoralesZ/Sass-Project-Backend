@@ -103,6 +103,10 @@ export class OrganizationMembersController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Missing member:update permission' })
   @ApiResponse({ status: 404, description: 'Member not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'The organization must keep at least one owner',
+  })
   removeMember(
     @CurrentOrganization({ required: true }) organizationId: string,
     @Param('userId', ParseUUIDPipe) userId: string,

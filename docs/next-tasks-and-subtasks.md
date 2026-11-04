@@ -239,7 +239,7 @@ Take this **alongside frontend task 3.5** (role change / remove-member UI).
 Subtasks:
 - [x] **3.4.1** Add role update endpoint (`PATCH /members/:userId`) with `@RequirePermissions(MEMBER_UPDATE)`; validate role, forbid self-change, restrict OWNER grant/revoke to OWNER, prevent demoting the last owner
 - [x] **3.4.2** Add member removal endpoint
-- [ ] **3.4.3** Prevent removal of the last owner
+- [x] **3.4.3** Prevent removal of the last owner
 
 Acceptance criteria:
 - Organization administrators can manage membership safely
