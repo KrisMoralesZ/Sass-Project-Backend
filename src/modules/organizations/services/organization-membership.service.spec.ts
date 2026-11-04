@@ -14,6 +14,7 @@ describe('OrganizationMembershipService', () => {
     findOne: jest.Mock;
     find: jest.Mock;
     count: jest.Mock;
+    delete: jest.Mock;
     createQueryBuilder: jest.Mock;
   };
   let queryBuilder: {
@@ -74,6 +75,7 @@ describe('OrganizationMembershipService', () => {
       findOne: jest.fn(),
       find: jest.fn(),
       count: jest.fn(),
+      delete: jest.fn(),
       createQueryBuilder: jest.fn(
         () => queryBuilder as unknown as SelectQueryBuilder<OrganizationMember>,
       ),
@@ -225,6 +227,70 @@ describe('OrganizationMembershipService', () => {
 
     await expect(service.getMember('org-1', 'missing')).rejects.toMatchObject({
       code: ErrorCode.RESOURCE_NOT_FOUND,
+    });
+  });
+
+  describe('removeMember', () => {
+    it('deletes only the member in the active organization', async () => {
+      membersRepository.findOne.mockResolvedValue({
+        ...membership,
+        userId: 'user-2',
+        role: OrganizationRole.MEMBER,
+      });
+      membersRepository.delete.mockResolvedValue({ affected: 1 });
+
+      await expect(
+        service.removeMember('org-1', 'user-2'),
+      ).resolves.toBeUndefined();
+
+      expect(membersRepository.delete).toHaveBeenCalledWith({
+        organizationId: 'org-1',
+        userId: 'user-2',
+      });
+    });
+
+    it('prevents removing the last owner', async () => {
+      membersRepository.findOne.mockResolvedValue({
+        ...membership,
+        userId: 'user-2',
+      });
+      membersRepository.count.mockResolvedValue(1);
+
+      await expect(
+        service.removeMember('org-1', 'user-2'),
+      ).rejects.toMatchObject({ code: ErrorCode.MEMBER_LAST_OWNER });
+
+      expect(membersRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('allows removing an owner when another owner remains', async () => {
+      membersRepository.findOne.mockResolvedValue({
+        ...membership,
+        userId: 'user-2',
+      });
+      membersRepository.count.mockResolvedValue(2);
+      membersRepository.delete.mockResolvedValue({ affected: 1 });
+
+      await expect(
+        service.removeMember('org-1', 'user-2'),
+      ).resolves.toBeUndefined();
+
+      expect(membersRepository.delete).toHaveBeenCalledWith({
+        organizationId: 'org-1',
+        userId: 'user-2',
+      });
+    });
+
+    it('throws not found when the member is not in the active organization', async () => {
+      membersRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.removeMember('org-1', 'missing'),
+      ).rejects.toMatchObject({
+        code: ErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      expect(membersRepository.delete).not.toHaveBeenCalled();
     });
   });
 

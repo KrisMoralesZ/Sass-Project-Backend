@@ -228,6 +228,35 @@ export class OrganizationMembershipService {
     return this.toMemberResponse(await this.membersRepository.save(membership));
   }
 
+  async removeMember(organizationId: string, userId: string): Promise<void> {
+    const membership = await this.membersRepository.findOne({
+      where: { organizationId, userId },
+    });
+
+    if (!membership) {
+      throw AppException.notFound('Organization member not found');
+    }
+
+    if (
+      membership.role === OrganizationRole.OWNER &&
+      (await this.countActiveOwners(organizationId)) <= 1
+    ) {
+      throw new AppException(
+        ErrorCode.MEMBER_LAST_OWNER,
+        'The organization must keep at least one owner.',
+      );
+    }
+
+    const result = await this.membersRepository.delete({
+      organizationId,
+      userId,
+    });
+
+    if (!result.affected) {
+      throw AppException.notFound('Organization member not found');
+    }
+  }
+
   private async countActiveOwners(organizationId: string): Promise<number> {
     return this.membersRepository.count({
       where: { organizationId, role: OrganizationRole.OWNER },
