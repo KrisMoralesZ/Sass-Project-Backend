@@ -1,4 +1,14 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiHeader,
@@ -9,6 +19,7 @@ import {
 import { CurrentUser } from '@authentication/decorators/current-user.decorator';
 import { CurrentOrganization, ORGANIZATION_ID_HEADER } from '@common/tenant';
 import { CreateProjectDto } from './dto/create-project.dto';
+import { ListProjectsQueryDto } from './dto/list-projects-query.dto';
 import { OrganizationPermission } from '../organizations/permissions/organization-permission.enum';
 import { RequirePermissions } from '../organizations/rbac';
 import { ProjectsService } from './projects.service';
@@ -44,5 +55,28 @@ export class ProjectsController {
     @CurrentUser() user: { id: string },
   ) {
     return this.projectsService.create(dto, organizationId, user.id);
+  }
+
+  @Get()
+  @RequirePermissions(OrganizationPermission.PROJECT_READ)
+  @ApiOperation({ summary: 'List projects in the active organization' })
+  @ApiResponse({ status: 200, description: 'Paginated project list' })
+  findAll(
+    @Query() query: ListProjectsQueryDto,
+    @CurrentOrganization({ required: true }) organizationId: string,
+  ) {
+    return this.projectsService.findAll(query, organizationId);
+  }
+
+  @Get(':id')
+  @RequirePermissions(OrganizationPermission.PROJECT_READ)
+  @ApiOperation({ summary: 'Get project by id' })
+  @ApiResponse({ status: 200, description: 'Project details' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentOrganization({ required: true }) organizationId: string,
+  ) {
+    return this.projectsService.findOne(id, organizationId);
   }
 }

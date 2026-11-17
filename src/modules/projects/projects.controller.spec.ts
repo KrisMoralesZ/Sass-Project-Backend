@@ -57,4 +57,29 @@ describe('ProjectsController', () => {
       OrganizationPermission.PROJECT_CREATE,
     ]);
   });
+
+  it('requires project:read permission for list and detail routes', () => {
+    const reflector = new Reflector();
+    const findAllHandler = Object.getOwnPropertyDescriptor(
+      ProjectsController.prototype,
+      'findAll',
+    )?.value as ProjectsController['findAll'];
+    const findOneHandler = Object.getOwnPropertyDescriptor(
+      ProjectsController.prototype,
+      'findOne',
+    )?.value as ProjectsController['findOne'];
+
+    expect(
+      reflector.get<OrganizationPermission[]>(
+        REQUIRED_PERMISSIONS_KEY,
+        findAllHandler,
+      ),
+    ).toEqual([OrganizationPermission.PROJECT_READ]);
+    expect(
+      reflector.get<OrganizationPermission[]>(
+        REQUIRED_PERMISSIONS_KEY,
+        findOneHandler,
+      ),
+    ).toEqual([OrganizationPermission.PROJECT_READ]);
+  });
 });
