@@ -11,7 +11,9 @@ import type { ProjectMetadata } from '../interfaces/project-metadata.interface';
 
 export class CreateProjectDto {
   @ApiProperty({ example: 'Website redesign' })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }): unknown =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   @IsString()
   @MinLength(1)
   @MaxLength(120)

@@ -16,7 +16,7 @@ describe('ProjectsService', () => {
       save: jest.fn(),
     };
     service = new ProjectsService(
-      projectsRepository as Repository<Project>,
+      projectsRepository as unknown as Repository<Project>,
     );
   });
 
@@ -37,9 +37,7 @@ describe('ProjectsService', () => {
     projectsRepository.create.mockReturnValue(entity);
     projectsRepository.save.mockResolvedValue(entity);
 
-    await expect(
-      service.create(dto, 'org-1', 'user-1'),
-    ).resolves.toEqual({
+    await expect(service.create(dto, 'org-1', 'user-1')).resolves.toEqual({
       id: entity.id,
       organizationId: entity.organizationId,
       ownerId: entity.ownerId,

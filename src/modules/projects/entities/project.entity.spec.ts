@@ -27,8 +27,7 @@ describe('Project', () => {
 
   it('defaults new projects to ACTIVE', () => {
     const statusColumn = getMetadataArgsStorage().columns.find(
-      (column) =>
-        column.target === Project && column.propertyName === 'status',
+      (column) => column.target === Project && column.propertyName === 'status',
     );
 
     expect(statusColumn?.options.default).toBe(ProjectStatus.ACTIVE);
@@ -52,6 +51,8 @@ describe('Project', () => {
       .map((relation) => relation.propertyName);
 
     expect(indices).toContain('ownerId');
-    expect(relations).toEqual(expect.arrayContaining(['owner', 'organization']));
+    expect(relations).toEqual(
+      expect.arrayContaining(['owner', 'organization']),
+    );
   });
 });

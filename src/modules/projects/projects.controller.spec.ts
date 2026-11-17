@@ -2,6 +2,7 @@ import { Reflector } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import { OrganizationPermission } from '@organizations/permissions/organization-permission.enum';
 import { REQUIRED_PERMISSIONS_KEY } from '@organizations/rbac/constants/rbac-metadata.constants';
+import { OrganizationMembershipService } from '@organizations/services/organization-membership.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { ProjectStatus } from './enums/project-status.enum';
 import { ProjectsController } from './projects.controller';
@@ -25,7 +26,13 @@ describe('ProjectsController', () => {
     };
     const moduleRef = await Test.createTestingModule({
       controllers: [ProjectsController],
-      providers: [{ provide: ProjectsService, useValue: projectsService }],
+      providers: [
+        { provide: ProjectsService, useValue: projectsService },
+        {
+          provide: OrganizationMembershipService,
+          useValue: { getActiveMembership: jest.fn() },
+        },
+      ],
     }).compile();
     const controller = moduleRef.get(ProjectsController);
     const dto: CreateProjectDto = { name: 'Website redesign' };
@@ -37,9 +44,13 @@ describe('ProjectsController', () => {
   });
 
   it('requires project:create permission', () => {
+    const createHandler = Object.getOwnPropertyDescriptor(
+      ProjectsController.prototype,
+      'create',
+    )?.value as ProjectsController['create'];
     const requiredPermissions = new Reflector().get<OrganizationPermission[]>(
       REQUIRED_PERMISSIONS_KEY,
-      ProjectsController.prototype.create,
+      createHandler,
     );
 
     expect(requiredPermissions).toEqual([
