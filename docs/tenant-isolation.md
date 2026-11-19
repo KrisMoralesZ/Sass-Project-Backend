@@ -90,7 +90,7 @@ These **must** include `organizationId` and extend `TenantScopedEntity`.
 |---|---|---|
 | `Organization` | Organizations | Root tenant record (owns its own `id`; members reference it) |
 | `OrganizationMember` | Users / Roles | `organizationId` required |
-| `Project` | Projects | `organizationId` required |
+| `Project` | Projects | `organizationId` required; `ownerId` references the owning user, whose membership must be validated by project services |
 | `ProjectMember` | Projects | Inherits via `projectId` + explicit `organizationId` recommended |
 | `Board` | Boards | `organizationId` required (denormalized for query performance) |
 | `BoardColumn` | Boards | Scoped via `boardId`; add `organizationId` if queried directly |

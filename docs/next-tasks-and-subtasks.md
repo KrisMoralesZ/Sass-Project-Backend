@@ -250,12 +250,16 @@ Acceptance criteria:
 
 ### Task 4.1 — Project CRUD
 Subtasks:
-- Create the Project entity
-- Add project create/list/detail/update/delete endpoints
-- Add tenant scoping to all project queries
+- [x] **4.1.1** Create the `Project` entity with tenant-scoped ownership, status, and metadata fields
+- [x] **4.1.2** Add project create endpoint (`POST /projects`) with validation and permission checks
+- [x] **4.1.3** Add project list/detail endpoints (`GET /projects`, `GET /projects/:id`) filtered to the active organization
+- [x] **4.1.4** Add project update/delete endpoints (`PATCH /projects/:id`, `DELETE /projects/:id`) with ownership/admin safeguards
+- [ ] **4.1.5** Enforce tenant scoping on all project repository queries and association lookups
+- [ ] **4.1.6** Add CRUD and tenant-isolation tests for project workflows
 
 Acceptance criteria:
 - Organization members can create and manage projects
+- Project data is isolated by organization and protected by the relevant permissions
 
 ### Task 4.2 — Project membership and visibility
 Subtasks:

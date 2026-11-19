@@ -7,6 +7,7 @@ import { AppConfigModule } from '@config/app-config.module';
 import { DatabaseModule } from '@database/database.module';
 import { HealthModule } from '@health/health.module';
 import { OrganizationsModule } from '@organizations/organizations.module';
+import { ProjectsModule } from '@app/modules/projects/projects.module';
 import { UsersModule } from '@users/users.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { UsersModule } from '@users/users.module';
     TenantModule,
     HealthModule,
     OrganizationsModule,
+    ProjectsModule,
     UsersModule,
   ],
 })
