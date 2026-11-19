@@ -4,12 +4,16 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { ListProjectsQueryDto } from './dto/list-projects-query.dto';
 import { Project } from './entities/project.entity';
 import { ProjectStatus } from './enums/project-status.enum';
+import { OrganizationRole } from '../organizations/enums/organization-role.enum';
 import { ProjectsService } from './projects.service';
 
 describe('ProjectsService', () => {
   let service: ProjectsService;
   let projectsRepository: jest.Mocked<
-    Pick<Repository<Project>, 'create' | 'save' | 'findAndCount' | 'findOne'>
+    Pick<
+      Repository<Project>,
+      'create' | 'save' | 'findAndCount' | 'findOne' | 'softRemove'
+    >
   >;
 
   beforeEach(() => {
@@ -18,6 +22,7 @@ describe('ProjectsService', () => {
       save: jest.fn(),
       findAndCount: jest.fn(),
       findOne: jest.fn(),
+      softRemove: jest.fn(),
     };
     service = new ProjectsService(
       projectsRepository as unknown as Repository<Project>,
@@ -156,5 +161,81 @@ describe('ProjectsService', () => {
     expect(projectsRepository.findOne).toHaveBeenCalledWith({
       where: { id: 'project-1', organizationId: 'org-2' },
     });
+  });
+
+  it('allows a member to update a project they own', async () => {
+    const project = {
+      id: 'project-1',
+      organizationId: 'org-1',
+      ownerId: 'user-1',
+      name: 'Old name',
+      description: null,
+      status: ProjectStatus.ACTIVE,
+      metadata: {},
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Project;
+    projectsRepository.findOne.mockResolvedValue(project);
+    projectsRepository.save.mockImplementation(
+      async (value) => value as Project,
+    );
+
+    await expect(
+      service.update(
+        'project-1',
+        { name: ' New name ', status: ProjectStatus.ARCHIVED },
+        'org-1',
+        { userId: 'user-1', role: OrganizationRole.MEMBER },
+      ),
+    ).resolves.toMatchObject({
+      name: 'New name',
+      status: ProjectStatus.ARCHIVED,
+    });
+  });
+
+  it('forbids a member from updating another member project', async () => {
+    projectsRepository.findOne.mockResolvedValue({
+      id: 'project-1',
+      organizationId: 'org-1',
+      ownerId: 'user-2',
+    } as Project);
+
+    await expect(
+      service.update('project-1', { name: 'Changed' }, 'org-1', {
+        userId: 'user-1',
+        role: OrganizationRole.MEMBER,
+      }),
+    ).rejects.toThrow('Only the project owner or an organization admin');
+  });
+
+  it('allows an admin to update and soft-delete projects', async () => {
+    const project = {
+      id: 'project-1',
+      organizationId: 'org-1',
+      ownerId: 'user-2',
+      name: 'Website redesign',
+      description: null,
+      status: ProjectStatus.ACTIVE,
+      metadata: {},
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Project;
+    projectsRepository.findOne.mockResolvedValue(project);
+    projectsRepository.save.mockImplementation(
+      async (value) => value as Project,
+    );
+    projectsRepository.softRemove.mockResolvedValue(project);
+
+    await service.update('project-1', { name: 'Updated' }, 'org-1', {
+      userId: 'user-1',
+      role: OrganizationRole.ADMIN,
+    });
+    await service.remove('project-1', 'org-1', {
+      userId: 'user-1',
+      role: OrganizationRole.ADMIN,
+    });
+
+    expect(projectsRepository.save).toHaveBeenCalledWith(project);
+    expect(projectsRepository.softRemove).toHaveBeenCalledWith(project);
   });
 });

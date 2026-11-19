@@ -12,6 +12,9 @@ import {
   ListProjectsQueryDto,
   PROJECT_SORT_FIELDS,
 } from './dto/list-projects-query.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
+import { OrganizationRole } from '../organizations/enums/organization-role.enum';
+import { ErrorCode } from '@common/errors/error-code.enum';
 import { Project } from './entities/project.entity';
 import { ProjectStatus } from './enums/project-status.enum';
 import { ProjectResponse } from './interfaces/project-response.interface';
@@ -66,6 +69,61 @@ export class ProjectsService {
   }
 
   async findOne(id: string, organizationId: string): Promise<ProjectResponse> {
+    const project = await this.findOneByTenant(id, organizationId);
+    return this.toResponse(project);
+  }
+
+  async update(
+    id: string,
+    dto: UpdateProjectDto,
+    organizationId: string,
+    actor: { userId: string; role: OrganizationRole },
+  ): Promise<ProjectResponse> {
+    const project = await this.findOneByTenant(id, organizationId);
+
+    if (
+      actor.role !== OrganizationRole.OWNER &&
+      actor.role !== OrganizationRole.ADMIN &&
+      project.ownerId !== actor.userId
+    ) {
+      throw AppException.forbidden(
+        ErrorCode.FORBIDDEN,
+        'Only the project owner or an organization admin can update this project.',
+      );
+    }
+
+    if (dto.name !== undefined) project.name = dto.name.trim();
+    if (dto.description !== undefined) project.description = dto.description;
+    if (dto.status !== undefined) project.status = dto.status;
+    if (dto.metadata !== undefined) project.metadata = dto.metadata;
+
+    return this.toResponse(await this.projectsRepository.save(project));
+  }
+
+  async remove(
+    id: string,
+    organizationId: string,
+    actor: { userId: string; role: OrganizationRole },
+  ): Promise<void> {
+    const project = await this.findOneByTenant(id, organizationId);
+
+    if (
+      actor.role !== OrganizationRole.OWNER &&
+      actor.role !== OrganizationRole.ADMIN
+    ) {
+      throw AppException.forbidden(
+        ErrorCode.FORBIDDEN,
+        'Only organization admins can delete projects.',
+      );
+    }
+
+    await this.projectsRepository.softRemove(project);
+  }
+
+  private async findOneByTenant(
+    id: string,
+    organizationId: string,
+  ): Promise<Project> {
     const project = await this.projectsRepository.findOne({
       where: { id, organizationId },
     });
@@ -74,7 +132,7 @@ export class ProjectsService {
       throw AppException.notFound('Project not found');
     }
 
-    return this.toResponse(project);
+    return project;
   }
 
   private toResponse(project: Project): ProjectResponse {
